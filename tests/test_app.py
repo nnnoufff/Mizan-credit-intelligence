@@ -106,3 +106,18 @@ def test_ui_and_demo_applicants():
         r = c.post(f"/score/demo/{ids[0]}").json()
         assert 0 <= r["probability_of_default"] <= 1 and r["applicant"]["id"] == ids[0]
         assert c.post("/score/demo/1").status_code == 404
+
+
+def test_one_service_serves_website_and_api():
+    os.environ["HC_MODEL_DIR"] = str(MODEL_DIR)
+    from fastapi.testclient import TestClient
+    from api.main import app, WEB_DIR
+    c = TestClient(app)
+    assert c.get("/api/health").json()["status"] == "ok"
+    assert 0 <= c.post("/api/score", json=APPLICANT).json()["probability_of_default"] <= 1
+    assert c.post("/score", json=APPLICANT).status_code == 200          # the original paths still answer
+    if (WEB_DIR / "en" / "index.html").exists():
+        r = c.get("/", follow_redirects=False)
+        assert r.status_code in (302, 307) and r.headers["location"] == "/en/"
+        assert "Credit risk scoring" in c.get("/en/").text
+        assert c.get("/ar/assess/").status_code == 200

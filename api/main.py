@@ -1,5 +1,6 @@
-"""Mizan – Credit Intelligence Platform: FastAPI service + web UI. Run from the project root:  uvicorn api.main:app --reload
-UI at http://127.0.0.1:8000/   API docs at http://127.0.0.1:8000/docs"""
+"""Mizan – Credit Intelligence Platform: FastAPI service + the website. Run from the project root:  uvicorn api.main:app --reload
+Website at http://127.0.0.1:8000/ (the static export in web/out; build it with `npm run build` in web/)
+API at /api/... (and the same endpoints at the root, e.g. /score)   API docs at http://127.0.0.1:8000/docs"""
 from __future__ import annotations
 
 import os
@@ -8,8 +9,9 @@ from pathlib import Path
 from typing import Optional
 
 import pandas as pd
-from fastapi import FastAPI, HTTPException
-from fastapi.responses import FileResponse
+from fastapi import APIRouter, FastAPI, HTTPException
+from fastapi.responses import FileResponse, RedirectResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -17,8 +19,11 @@ sys.path.insert(0, str(ROOT / "src"))
 from hc_app.scoring import Scorer, assess, build_row  # noqa: E402
 
 MODEL_DIR = Path(os.environ.get("HC_MODEL_DIR", ROOT / "models" / "final"))
+# the website, exported by Next.js (web/next.config.ts, output: "export"); without it "/" shows the original page
+WEB_DIR = Path(os.environ.get("MIZAN_WEB_DIR", ROOT / "web" / "out"))
 app = FastAPI(title="Mizan – Credit Intelligence Platform", version="1.0",
               description="Decision support only: estimates default risk, applies the SAMA obligation cap and explains the result.")
+router = APIRouter()   # every endpoint, served at the root and again under /api for the website
 _scorer: Optional[Scorer] = None
 _demo: Optional[pd.DataFrame] = None
 
@@ -84,10 +89,12 @@ class Portfolio(BaseModel):
 
 @app.get("/", include_in_schema=False)
 def index():
+    if (WEB_DIR / "en" / "index.html").exists():
+        return RedirectResponse("/en/")
     return FileResponse(ROOT / "api" / "static" / "index.html")
 
 
-@app.get("/health")
+@router.get("/health")
 def health():
     s = scorer()
     return {"status": "ok", "models": s.man["final_models"], "cv_auc": s.man.get("cv_auc", {}), "version_warnings": s.version_warnings,
@@ -96,7 +103,7 @@ def health():
                        "early_warning": s.ew is not None}}
 
 
-@app.get("/options")
+@router.get("/options")
 def options():
     """Allowed values of the categorical fields (for the form drop-downs)."""
     lv = scorer().levels
@@ -104,7 +111,7 @@ def options():
     return {k: lv.get(k, []) for k in keys}
 
 
-@app.post("/score")
+@router.post("/score")
 def score(a: Applicant):
     inp = a.model_dump() if hasattr(a, "model_dump") else a.dict()
     return assess(scorer(), build_row(inp), a.AMT_INCOME_TOTAL, a.AMT_CREDIT, a.AMT_ANNUITY, a.age_years, a.retired, a.existing_monthly_obligations)
@@ -115,13 +122,13 @@ def _ew(c: Contract) -> dict:
     return {"contract_id": c.contract_id, **scorer().early_warning(hist)}
 
 
-@app.post("/early-warning")
+@router.post("/early-warning")
 def early_warning(c: Contract):
     """Model 4: probability that a running contract (currently up to date) falls into arrears within 3 months."""
     return {**_ew(c), "decision_support_only": True}
 
 
-@app.post("/early-warning/batch")
+@router.post("/early-warning/batch")
 def early_warning_batch(p: Portfolio):
     """Model 4 for many contracts, sorted by risk (highest first; contracts not scored come last)."""
     rows = [_ew(c) for c in p.contracts]
@@ -129,12 +136,12 @@ def early_warning_batch(p: Portfolio):
     return {"results": rows, "decision_support_only": True}
 
 
-@app.get("/demo/ids")
+@router.get("/demo/ids")
 def demo_ids():
     return demo()["SK_ID_CURR"].astype(int).tolist()
 
 
-@app.post("/score/demo/{applicant_id}")
+@router.post("/score/demo/{applicant_id}")
 def score_demo(applicant_id: int):
     """Score a stored applicant that carries the full credit history (taken from the unlabeled test file)."""
     d = demo()
@@ -148,3 +155,11 @@ def score_demo(applicant_id: int):
     out["applicant"] = {"id": applicant_id, "income": income, "credit": credit, "annuity": annuity, "age_years": round(age, 1),
                         "income_type": str(row["NAME_INCOME_TYPE"].iloc[0])}
     return out
+
+
+app.include_router(router)
+app.include_router(router, prefix="/api", include_in_schema=False)
+
+# the website last, so the API routes and /docs win; html=True serves /en/ as en/index.html and 404.html for unknown pages
+if WEB_DIR.is_dir():
+    app.mount("/", StaticFiles(directory=WEB_DIR, html=True), name="web")

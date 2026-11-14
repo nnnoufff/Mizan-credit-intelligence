@@ -83,12 +83,14 @@ npm run dev
 ```
 Then open http://localhost:3000 (English) or http://localhost:3000/ar (Arabic, right-to-left). Pages: landing, `/assess` (new application), `/portfolio` (early warning), `/models`. Set `MIZAN_API_URL` if the API runs elsewhere. Design decisions: `web/design-system/mizan/MIZAN-OVERRIDES.md`.
 
-**Deploy (two services)**
+**Deploy (one service on Render)**
 
-1. *Scoring API* on Render: New, Blueprint, pick this repository. `render.yaml` sets the build (`pip install -r requirements.txt`), the start command (`uvicorn api.main:app --host 0.0.0.0 --port $PORT`), Python 3.13.2 and the `/health` check. Copy the service URL (`https://mizan-api-xxxx.onrender.com`). On the free plan the service sleeps after 15 minutes idle; the first request then takes about a minute. Other Python hosts can use the `Procfile`.
-2. *Website* on Vercel: Add New, Project, pick this repository, set **Root Directory** to `web`. Environment variables: `MIZAN_API_URL` = the API URL from step 1, `SITE_URL` = the Vercel address (for share images). Deploy.
+FastAPI serves both the API and the website: the website is the static export in `web/out` (committed), so Render only needs Python.
 
-The website calls the API from the server (`/api/*` is forwarded), so the API needs no CORS settings.
+- Render: New, Web Service (or Blueprint with `render.yaml`), this repository and branch. Build `pip install -r requirements.txt`, start `uvicorn api.main:app --host 0.0.0.0 --port $PORT`, environment variable `PYTHON_VERSION=3.13.2`.
+- Open the service URL: `/` goes to the website (`/en/`, `/ar/`), the API answers at `/api/...` (and at the original paths such as `/score`), the docs at `/docs`.
+- After changing the website, rebuild the export and commit it: `cd web && npm run build` (optionally `SITE_URL=https://your-service.onrender.com npm run build` so share images use the real address).
+- On the free plan the service sleeps after 15 minutes idle; the first visit then takes about a minute.
 
 **Example API request**
 ```bash
