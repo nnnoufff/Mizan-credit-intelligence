@@ -1,0 +1,11 @@
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+*.zip
+final-*/
+.DS_Store
+# data and data-derived files are not committed (see "Data" in README)
+models/final/demo_applicants.parquet
+models/final/application_test_scores.csv
+*.csv.gz

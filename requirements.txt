@@ -1,0 +1,12 @@
+# Model libraries are pinned to the versions the models were trained with (see library_versions in models/final/manifest.json)
+numpy
+pandas
+pyarrow
+scikit-learn==1.6.1
+lightgbm==4.6.0
+xgboost==2.1.4
+catboost
+fastapi
+uvicorn[standard]
+httpx
+pytest
