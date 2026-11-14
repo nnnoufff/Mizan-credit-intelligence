@@ -1,0 +1,136 @@
+@import "tailwindcss";
+
+/* Theme: light by default, dark via [data-theme="dark"] (set from the system preference or the toggle). */
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
+/* Tokens: web/design-system/mizan/MIZAN-OVERRIDES.md (all text pairs checked >= 4.5:1). */
+:root {
+  /* palette cool-white-slate (taste-skill deal, same as the landing pages) */
+  --background: #f7f9fa;
+  --foreground: #1f3038;
+  --card: #ffffff;
+  --muted: #ecf0f2;
+  --muted-foreground: #4f5d64;
+  --border: #dbe2e5;
+  --primary: #1f3038;
+  --primary-foreground: #ffffff;
+  --secondary: #0d7480;
+  --accent: #0d7480;
+  --accent-foreground: #ffffff;
+  --accent-soft: #e2f0f1;
+  --gold: #7cc8cf;
+  --ring: #0d7480;
+  --fast: #067647;
+  --fast-bg: #ecfdf3;
+  --standard: #1d4ed8;
+  --standard-bg: #eff4ff;
+  --strict: #b42318;
+  --strict-bg: #fef3f2;
+  --ink: #1f3038;
+  --ink-2: #2c3c44;
+  --ink-border: #3d4e57;
+  --on-ink: #f7f9fa;
+  --on-ink-muted: #b3bcc0;
+  --shadow-sm: 0 1px 2px rgb(31 48 56 / 0.06);
+  --shadow-md: 0 1px 2px rgb(31 48 56 / 0.05), 0 4px 12px rgb(31 48 56 / 0.05);
+  --shadow-lg: 0 16px 40px rgb(31 48 56 / 0.14);
+  color-scheme: light;
+}
+
+[data-theme="dark"] {
+  --background: #10191e;
+  --foreground: #eef2f3;
+  --card: #172329;
+  --muted: #213039;
+  --muted-foreground: #a5b0b5;
+  --border: #2a3a42;
+  --primary: #eef2f3;
+  --primary-foreground: #10191e;
+  --secondary: #6cc3cc;
+  --accent: #5cbcc6;
+  --accent-foreground: #0b1418;
+  --accent-soft: #123034;
+  --gold: #7cc8cf;
+  --ring: #5cbcc6;
+  --fast: #6ce9a6;
+  --fast-bg: #0c2a1c;
+  --standard: #a9c3f5;
+  --standard-bg: #172a4d;
+  --strict: #fda29b;
+  --strict-bg: #3a1a17;
+  --ink: #0b1418;
+  --ink-2: #16242b;
+  --ink-border: #2a3a42;
+  --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.4);
+  --shadow-md: 0 4px 12px rgb(0 0 0 / 0.35);
+  --shadow-lg: 0 24px 48px rgb(0 0 0 / 0.5);
+  color-scheme: dark;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-border: var(--border);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent-soft: var(--accent-soft);
+  --color-gold: var(--gold);
+  --color-ring: var(--ring);
+  --color-fast: var(--fast);
+  --color-fast-bg: var(--fast-bg);
+  --color-standard: var(--standard);
+  --color-standard-bg: var(--standard-bg);
+  --color-strict: var(--strict);
+  --color-strict-bg: var(--strict-bg);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-ink-border: var(--ink-border);
+  --color-on-ink: var(--on-ink);
+  --color-on-ink-muted: var(--on-ink-muted);
+  --shadow-soft: var(--shadow-sm);
+  --shadow-card: var(--shadow-md);
+  --shadow-float: var(--shadow-lg);
+  --font-sans: var(--font-familjen), var(--font-plex-ar), system-ui, sans-serif;
+  --font-mono: var(--font-plex-mono), ui-monospace, monospace;
+}
+
+html { background: var(--background); }
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+html[lang="ar"] body { font-family: var(--font-plex-ar), var(--font-familjen), system-ui, sans-serif; line-height: 1.7; }
+
+.tabular { font-variant-numeric: tabular-nums; }
+h1, h2 { letter-spacing: -0.02em; }
+html[lang="ar"] :is(h1, h2) { letter-spacing: 0; }
+
+/* visible keyboard focus everywhere */
+:where(a, button, input, select, textarea, [tabindex]):focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+  border-radius: 8px;
+}
+
+.hero-grid {
+  background-image:
+    linear-gradient(to right, rgb(255 255 255 / 0.035) 1px, transparent 1px),
+    linear-gradient(to bottom, rgb(255 255 255 / 0.035) 1px, transparent 1px);
+  background-size: 80px 80px;
+  mask-image: radial-gradient(ellipse at 60% 30%, black 40%, transparent 80%);
+}
+
+@keyframes rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+.rise { animation: rise 420ms cubic-bezier(.2,.7,.2,1) both; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}

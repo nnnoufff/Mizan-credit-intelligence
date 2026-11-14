@@ -66,6 +66,22 @@ class Applicant(BaseModel):
     EXT_SOURCE_3: Optional[float] = Field(None, ge=0, le=1)
 
 
+class MonthRecord(BaseModel):
+    dpd: float = Field(0, ge=0, description="Days past due in this month")
+    dpd_def: float = Field(0, ge=0, description="Days past due with tolerance (small debts ignored)")
+    inst_total: Optional[float] = Field(None, ge=0, description="Total number of instalments of the contract")
+    inst_left: Optional[float] = Field(None, ge=0, description="Instalments left to pay")
+
+
+class Contract(BaseModel):
+    contract_id: Optional[str] = None
+    history: list[MonthRecord] = Field(..., min_length=1, description="Monthly records, oldest first; the last one is the current month")
+
+
+class Portfolio(BaseModel):
+    contracts: list[Contract] = Field(..., min_length=1, max_length=5000)
+
+
 @app.get("/", include_in_schema=False)
 def index():
     return FileResponse(ROOT / "api" / "static" / "index.html")
@@ -75,7 +91,9 @@ def index():
 def health():
     s = scorer()
     return {"status": "ok", "models": s.man["final_models"], "cv_auc": s.man.get("cv_auc", {}), "version_warnings": s.version_warnings,
-            "demo_applicants": (MODEL_DIR / "demo_applicants.parquet").exists()}
+            "demo_applicants": (MODEL_DIR / "demo_applicants.parquet").exists(),
+            "phase2": {"amount_suggestion": s.mono is not None, "amount_suggestion_noise_gate": bool(s.mono_folds),
+                       "early_warning": s.ew is not None}}
 
 
 @app.get("/options")
@@ -90,6 +108,25 @@ def options():
 def score(a: Applicant):
     inp = a.model_dump() if hasattr(a, "model_dump") else a.dict()
     return assess(scorer(), build_row(inp), a.AMT_INCOME_TOTAL, a.AMT_CREDIT, a.AMT_ANNUITY, a.age_years, a.retired, a.existing_monthly_obligations)
+
+
+def _ew(c: Contract) -> dict:
+    hist = [m.model_dump() if hasattr(m, "model_dump") else m.dict() for m in c.history]
+    return {"contract_id": c.contract_id, **scorer().early_warning(hist)}
+
+
+@app.post("/early-warning")
+def early_warning(c: Contract):
+    """Model 4: probability that a running contract (currently up to date) falls into arrears within 3 months."""
+    return {**_ew(c), "decision_support_only": True}
+
+
+@app.post("/early-warning/batch")
+def early_warning_batch(p: Portfolio):
+    """Model 4 for many contracts, sorted by risk (highest first; contracts not scored come last)."""
+    rows = [_ew(c) for c in p.contracts]
+    rows.sort(key=lambda r: -r.get("probability_of_arrears_3m", -1))
+    return {"results": rows, "decision_support_only": True}
 
 
 @app.get("/demo/ids")

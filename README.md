@@ -15,7 +15,7 @@ The product is **decision support only**: it never approves or rejects an applic
 | Why this result? | The five factors that moved the estimate most, with their direction |
 | What if external credit scores are missing? | A fallback model without them is used automatically |
 
-Planned phase 2 (models trained and saved, not yet connected to the UI): suggestion of a smaller loan amount that satisfies the cap and the risk threshold, and an early-warning score for running contracts.
+Phase 2 (connected in the API, not yet in the web UI): every `/score` response includes an `amount_suggestion` (Model 3: the largest amount, down to -30%, that satisfies the SAMA cap and the risk threshold), and `/early-warning` scores running contracts from their monthly payment history (Model 4). The amount-suggestion noise gate needs the five `3_monotone__lightgbm__fold*.txt` files from the notebook's `home_credit_runs/models/` folder; without them it is skipped and `noise_gate_applied` is `false`.
 
 Gender and age are **not** model inputs. Age is only an eligibility rule; gender and age are used only to audit performance by group.
 
@@ -73,6 +73,23 @@ Then open:
 
 The commands call the virtual environment's Python directly, so no activation step is needed.
 
+**New web app (Next.js, English + Arabic)**
+
+The redesigned site lives in `web/` and talks to the API above (keep it running on port 8000). Requires Node.js 20 or newer.
+```bash
+cd web
+npm install
+npm run dev
+```
+Then open http://localhost:3000 (English) or http://localhost:3000/ar (Arabic, right-to-left). Pages: landing, `/assess` (new application), `/portfolio` (early warning), `/models`. Set `MIZAN_API_URL` if the API runs elsewhere. Design decisions: `web/design-system/mizan/MIZAN-OVERRIDES.md`.
+
+**Deploy (two services)**
+
+1. *Scoring API* on Render: New, Blueprint, pick this repository. `render.yaml` sets the build (`pip install -r requirements.txt`), the start command (`uvicorn api.main:app --host 0.0.0.0 --port $PORT`), Python 3.13.2 and the `/health` check. Copy the service URL (`https://mizan-api-xxxx.onrender.com`). On the free plan the service sleeps after 15 minutes idle; the first request then takes about a minute. Other Python hosts can use the `Procfile`.
+2. *Website* on Vercel: Add New, Project, pick this repository, set **Root Directory** to `web`. Environment variables: `MIZAN_API_URL` = the API URL from step 1, `SITE_URL` = the Vercel address (for share images). Deploy.
+
+The website calls the API from the server (`/api/*` is forwarded), so the API needs no CORS settings.
+
 **Example API request**
 ```bash
 curl -X POST http://127.0.0.1:8000/score -H "Content-Type: application/json" -d "{\"age_years\":35,\"AMT_INCOME_TOTAL\":15000,\"AMT_CREDIT\":300000,\"AMT_ANNUITY\":9000,\"EXT_SOURCE_2\":0.6}"
@@ -92,7 +109,7 @@ curl -X POST http://127.0.0.1:8000/score -H "Content-Type: application/json" -d 
 ## 5. Repository structure
 
 ```
-api/main.py              FastAPI service: /, /health, /options, /score, /score/demo/{id}
+api/main.py              FastAPI service: /, /health, /options, /score, /score/demo/{id}, /early-warning, /early-warning/batch
 api/static/index.html    Web UI served by the API
 src/hc_app/scoring.py    Scoring, explanation, SAMA and eligibility logic
 models/final/            Trained models, calibrators, manifest.json (data files are not committed)

@@ -1,12 +1,14 @@
-# Model libraries are pinned to the versions the models were trained with (see library_versions in models/final/manifest.json)
-numpy
-pandas
-pyarrow
+# Exact versions: the models are pickles, so the serving libraries must match what was tested
+# (models/final/manifest.json lists the training versions; these load them and pass the test suite).
+numpy==2.5.4
+pandas==3.1.1
+pyarrow==26.0.1
 scikit-learn==1.6.1
 lightgbm==4.6.0
 xgboost==2.1.4
-catboost
-fastapi
-uvicorn[standard]
-httpx
-pytest
+catboost==1.2.10
+fastapi==0.163.0
+uvicorn[standard]==0.54.0
+pydantic==2.14.3
+httpx==0.28.1
+pytest==9.2.0

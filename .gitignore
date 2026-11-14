@@ -9,3 +9,21 @@ final-*/
 models/final/demo_applicants.parquet
 models/final/application_test_scores.csv
 *.csv.gz
+
+# web app
+web/node_modules/
+web/.next/
+web/.vercel/
+web/*.tsbuildinfo
+web/next-env.d.ts
+
+# taste-skill working files (Chrome profiles, screenshots); the plan and waivers are kept
+.taste-skill/*
+!.taste-skill/plan.md
+!.taste-skill/waivers.json
+web/public/landing/.taste-skill/
+
+# local env files
+.env
+.env.*
+web/.env*

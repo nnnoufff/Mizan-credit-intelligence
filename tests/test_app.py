@@ -44,6 +44,56 @@ def test_api():
     assert c.post("/score", json={**APPLICANT, "AMT_INCOME_TOTAL": -1}).status_code == 422
 
 
+def test_amount_suggestion():
+    from hc_app.scoring import Scorer, build_row
+    s = Scorer(MODEL_DIR)
+    base = dict(AMT_INCOME_TOTAL=15000, AMT_CREDIT=300000, AMT_GOODS_PRICE=300000, EXT_SOURCE_2=0.6, CNT_FAM_MEMBERS=2)
+    assert s.suggest_amount(build_row({**base, "AMT_ANNUITY": 4000}), False)["status"] == "not_needed"
+    r = s.suggest_amount(build_row({**base, "AMT_ANNUITY": 5500}), False)   # 36.7% > 1/3 cap -> a ~10% cut fixes it
+    assert r["status"] == "suggested" and 0 < r["reduction"] <= 0.3
+    assert r["suggested_instalment"] <= r["max_instalment_sama"] + 1e-6 and r["monotone_risk_suggested"] <= r["risk_threshold"]
+    assert 0 <= r["probability_of_default_suggested"] <= 1
+    assert s.suggest_amount(build_row({**base, "AMT_ANNUITY": 9000}), False)["status"] == "not_reachable"   # needs > 30% cut
+
+
+def test_shrink_keeps_term_and_updates_ratios():
+    from hc_app.scoring import build_row, shrink
+    row = build_row(dict(AMT_INCOME_TOTAL=10000, AMT_CREDIT=200000, AMT_ANNUITY=3000, AMT_GOODS_PRICE=200000, CNT_FAM_MEMBERS=2))
+    d = shrink(row, 0.8)
+    assert d["AMT_CREDIT"].iloc[0] == 160000 and d["AMT_ANNUITY"].iloc[0] == 2400
+    assert abs(d["aff_annuity_to_income"].iloc[0] - 0.24) < 1e-9 and abs(d["aff_dti_total_est"].iloc[0] - 0.24) < 1e-9
+    assert d["aff_credit_to_annuity_term"].iloc[0] == row["aff_credit_to_annuity_term"].iloc[0]
+
+
+def test_early_warning_features_and_score():
+    from hc_app.scoring import Scorer, early_warning_features
+    hist = [dict(dpd=d, inst_total=12, inst_left=12 - i) for i, d in enumerate([0, 0, 5, 30, 10, 0])]
+    f = early_warning_features(hist)
+    assert f["dpd_max_l3"] == 30 and f["dpd_max_all"] == 30 and f["dpd_share_l6"] == 0.5 and f["months_on_book"] == 6
+    assert f["paid_down_l3"] == 3 and abs(f["share_left"] - 7 / 12) < 1e-9
+    s = Scorer(MODEL_DIR)
+    clean = s.early_warning([dict(dpd=0, inst_total=24, inst_left=24 - i) for i in range(8)])
+    late = s.early_warning(hist)
+    assert clean["status"] == late["status"] == "scored" and clean["probability_of_arrears_3m"] < late["probability_of_arrears_3m"]
+    assert s.early_warning(hist + [dict(dpd=12, inst_total=12, inst_left=6)])["status"] == "already_in_arrears"
+
+
+def test_api_phase2():
+    os.environ["HC_MODEL_DIR"] = str(MODEL_DIR)
+    from fastapi.testclient import TestClient
+    from api.main import app
+    c = TestClient(app)
+    assert c.get("/health").json()["phase2"]["early_warning"]
+    assert c.post("/score", json=APPLICANT).json()["amount_suggestion"]["available"]
+    hist = [{"dpd": 0, "inst_total": 24, "inst_left": 24 - i} for i in range(8)]
+    r = c.post("/early-warning", json={"contract_id": "A1", "history": hist}).json()
+    assert r["contract_id"] == "A1" and 0 <= r["probability_of_arrears_3m"] <= 1
+    late = [{"dpd": d, "inst_total": 12, "inst_left": 12 - i} for i, d in enumerate([0, 0, 5, 30, 10, 0])]
+    b = c.post("/early-warning/batch", json={"contracts": [{"contract_id": "A1", "history": hist}, {"contract_id": "B2", "history": late}]}).json()
+    assert [x["contract_id"] for x in b["results"]] == ["B2", "A1"]
+    assert c.post("/early-warning", json={"history": []}).status_code == 422
+
+
 def test_ui_and_demo_applicants():
     os.environ["HC_MODEL_DIR"] = str(MODEL_DIR)
     from fastapi.testclient import TestClient

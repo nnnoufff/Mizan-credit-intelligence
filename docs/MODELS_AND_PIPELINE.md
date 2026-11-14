@@ -33,8 +33,8 @@ At decision time the service does this for one application:
 |---|---|---|---|---|---|
 | 1 | Default risk | How likely is this applicant to default? | Logistic regression, LightGBM, XGBoost, CatBoost, ensemble | Ensemble | Used |
 | 2 | Fallback | Same, when external credit scores are missing | Same four + ensemble | Ensemble | Used (automatic) |
-| 3 | Monotone risk | What smaller amount would pass the cap and the risk threshold? | LightGBM, XGBoost, ensemble | LightGBM | Saved, not connected yet |
-| 4 | Early warning | Will a running contract fall into arrears in the next 3 months? | Same four + ensemble | LightGBM | Saved, not connected yet |
+| 3 | Monotone risk | What smaller amount would pass the cap and the risk threshold? | LightGBM, XGBoost, ensemble | LightGBM | Connected in the API (`amount_suggestion` in `/score`) |
+| 4 | Early warning | Will a running contract fall into arrears in the next 3 months? | Same four + ensemble | LightGBM | Connected in the API (`/early-warning`) |
 
 **Dependencies.** Models 1, 2, 3 and 4 are trained independently of each other. Calibration, lanes, explanations and confidence depend on Model 1. The amount suggestion depends on Model 3 and on the SAMA cap rule.
 

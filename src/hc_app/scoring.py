@@ -55,6 +55,27 @@ class Scorer:
         self.cal = {k: self._load(self.folder / v) for k, v in self.man["calibrators"].items()}
         self.labels = self.man.get("arabic_labels", {})
         self.version_warnings = self._check_versions()
+        # Phase 2 models (optional: the service still works without them)
+        self.mono = self._load_optional("3_monotone", "lightgbm")
+        self.ew = self._load_optional("4_early_warning", "lightgbm")
+        self.mono_folds = self._load_fold_models(self.man.get("amount_suggestion", {}).get("fold_models", []))
+
+    def _load_optional(self, task: str, algo: str):
+        path = self.folder / f"{task}__{algo}.pkl"
+        return self._load(path) if algo in self.man["final_models"].get(task, []) and path.exists() else None
+
+    def _load_fold_models(self, rel_paths: list[str]) -> list:
+        """Fold models for the amount-suggestion noise gate. Looked up next to the bundle and one level up
+        (the notebook keeps them in home_credit_runs/models/). All five are needed, otherwise the gate is skipped."""
+        import lightgbm as lgb
+        found = []
+        for rel in rel_paths:
+            for base in (self.folder, self.folder.parent):
+                p = base / rel
+                if p.exists():
+                    found.append(lgb.Booster(model_file=str(p)))
+                    break
+        return found if rel_paths and len(found) == len(rel_paths) else []
 
     @staticmethod
     def _load(path: Path):
@@ -151,6 +172,115 @@ class Scorer:
         return {"eligible": not flags, "flags": flags, "approx_term_years": term_years,
                 "note": "Age limits are example policy values, not SAMA numbers."}
 
+    # ---- phase 2: Model 3, loan-amount suggestion ---------------------------------------------------------------
+    def suggest_amount(self, df: pd.DataFrame, retired: bool, existing_monthly_obligations: float = 0.0) -> dict:
+        """Largest reduced amount (credit and instalment scaled together, down to -max_cut) that satisfies BOTH the SAMA
+        cap and the Model 3 risk threshold. Same search as notebook step 15. One row only."""
+        if self.mono is None:
+            return {"available": False, "status": "model_unavailable", "message": "Model 3 is not in the model bundle."}
+        cfg = self.man["amount_suggestion"]
+        thr, max_cut, step = float(cfg["risk_threshold_raw_monotone_pd"]), float(cfg["max_cut"]), float(cfg["step"])
+        feats = self.man["features"]["monotone"]
+        row = df.iloc[[0]].reset_index(drop=True)
+        income, credit, annuity = (float(row[c].iloc[0]) for c in ("AMT_INCOME_TOTAL", "AMT_CREDIT", "AMT_ANNUITY"))
+        sama = self.sama_check(income, annuity, retired, existing_monthly_obligations)
+        max_ann = sama["max_instalment"]
+
+        def mono_pd(d: pd.DataFrame, model) -> float:
+            return float(model.predict(self._prep(d, feats))[0])
+
+        p0 = mono_pd(row, self.mono)
+        base = {"available": True, "risk_threshold": thr, "monotone_risk_requested": p0,
+                "within_risk_threshold": bool(p0 <= thr), "within_sama_cap": sama["within_cap"],
+                "requested_credit": credit, "requested_instalment": annuity, "max_instalment_sama": max_ann,
+                "noise_gate_applied": bool(self.mono_folds)}
+        if p0 <= thr and sama["within_cap"]:
+            return {**base, "status": "not_needed", "message": "The requested amount already meets the SAMA cap and the risk threshold."}
+
+        n = int(round(max_cut / step))
+        for f in np.round([1 - step * k for k in range(1, n + 1)], 4):
+            d = shrink(row, float(f))
+            p1 = mono_pd(d, self.mono)
+            if p1 <= thr and annuity * f <= max_ann:
+                if self.mono_folds:   # noise gate: the risk drop must exceed 2 SD of the drop across the fold models
+                    drops = np.array([mono_pd(row, m) - mono_pd(d, m) for m in self.mono_folds])
+                    if (p0 - p1) < 2 * drops.std(ddof=1):
+                        return {**base, "status": "below_noise", "message": "A smaller amount was found, but the risk change is within model noise."}
+                rescored = self.score(d).iloc[0]
+                f = float(f)
+                return {**base, "status": "suggested", "reduction": round(1 - f, 4), "suggested_credit": credit * f,
+                        "suggested_instalment": annuity * f, "monotone_risk_suggested": p1,
+                        "probability_of_default_suggested": float(rescored["pd"]), "lane_suggested": rescored["lane"],
+                        "message": f"Reducing the amount by {1 - f:.0%} meets both the SAMA cap and the risk threshold."}
+        return {**base, "status": "not_reachable",
+                "message": f"No amount within -{max_cut:.0%} meets both the SAMA cap and the risk threshold."}
+
+    # ---- phase 2: Model 4, early warning for running contracts --------------------------------------------------
+    def early_warning(self, history: list[dict]) -> dict:
+        """Probability that a running contract, currently up to date, falls into arrears within the next 3 months."""
+        if self.ew is None:
+            return {"available": False, "status": "model_unavailable", "message": "Model 4 is not in the model bundle."}
+        feats = early_warning_features(history)
+        benchmark = feats["dpd_max_l3"]
+        if history[-1].get("dpd", 0) > 0:
+            return {"available": True, "status": "already_in_arrears", "features": feats, "benchmark_max_dpd_last_3m": benchmark,
+                    "message": "The contract is already past due this month. The model only scores contracts that are currently up to date."}
+        if feats["inst_left"] is not None and feats["inst_left"] <= 0:
+            return {"available": True, "status": "completed", "features": feats, "benchmark_max_dpd_last_3m": benchmark,
+                    "message": "No instalments are left on this contract."}
+        names = self.man["features"]["early_warning"]
+        X = pd.DataFrame([[feats[c] for c in names]], columns=names).astype("float32")
+        return {"available": True, "status": "scored", "probability_of_arrears_3m": float(self.ew.predict(X)[0]),
+                "features": feats, "benchmark_max_dpd_last_3m": benchmark,
+                "note": "Prioritisation aid with modest accuracy (cross-validated AUC 0.68), not a precise alarm."}
+
+
+AFF_DTI = ["aff_dti_plus_bureau_raw", "aff_dti_plus_bureau_est", "aff_dti_plus_bureau_est_fallback", "aff_dti_plus_hc_active",
+           "aff_dti_total_raw", "aff_dti_total_est", "aff_dti_total_est_fallback"]
+AFF_RESIDUAL = ["aff_residual_per_member_new_only", "aff_residual_per_member_total_raw", "aff_residual_per_member_total_est"]
+
+
+def shrink(df: pd.DataFrame, f: float) -> pd.DataFrame:
+    """Scale credit and instalment by f and update the derived affordability ratios (notebook step 15)."""
+    d = df.copy()
+    num = lambda c: pd.to_numeric(d[c], errors="coerce").astype(float).values if c in d else np.full(len(d), np.nan)
+    inc = num("AMT_INCOME_TOTAL")
+    fam = num("CNT_FAM_MEMBERS"); fam = np.where(fam == 0, np.nan, fam)
+    c0, a0 = num("AMT_CREDIT"), num("AMT_ANNUITY")
+    c1, a1 = c0 * f, a0 * f
+    d["AMT_CREDIT"], d["AMT_ANNUITY"] = c1, a1
+    d["aff_annuity_to_income"], d["aff_credit_to_income"], d["aff_credit_to_goods"] = a1 / inc, c1 / inc, c1 / num("AMT_GOODS_PRICE")
+    for c in AFF_DTI:
+        if c in d:
+            d[c] = num(c) + (a1 - a0) / inc
+    if "aff_total_debt_incl_new_to_income" in d:
+        d["aff_total_debt_incl_new_to_income"] = num("aff_total_debt_incl_new_to_income") + (c1 - c0) / inc
+    for c in AFF_RESIDUAL:
+        if c in d:
+            d[c] = num(c) - (a1 - a0) / fam
+    return d
+
+
+def early_warning_features(history: list[dict]) -> dict:
+    """The 11 Model 4 inputs at the latest month, computed like the notebook's SQL (step 17).
+    history: monthly records, oldest first, each with dpd, dpd_def, inst_total, inst_left."""
+    if not history:
+        raise ValueError("history must contain at least one month")
+    g = lambda r, k: None if r.get(k) is None else float(r[k])
+    dpd = [g(r, "dpd") or 0.0 for r in history]
+    last = history[-1]
+    inst_total, inst_left = g(last, "inst_total"), g(last, "inst_left")
+    left_3 = g(history[-4], "inst_left") if len(history) >= 4 else None
+    return {
+        "dpd_def": g(last, "dpd_def") or 0.0,
+        "dpd_max_l3": max(dpd[-3:]), "dpd_max_l6": max(dpd[-6:]), "dpd_max_all": max(dpd),
+        "dpd_share_l6": float(np.mean([x > 0 for x in dpd[-6:]])), "dpd_share_all": float(np.mean([x > 0 for x in dpd])),
+        "months_on_book": float(len(history)),
+        "inst_total": inst_total, "inst_left": inst_left,
+        "share_left": inst_left / inst_total if inst_total and inst_left is not None else None,
+        "paid_down_l3": left_3 - inst_left if left_3 is not None and inst_left is not None else None,
+    }
+
 
 def build_row(inp: dict) -> pd.DataFrame:
     """One-row frame from manually entered fields; derives the simple affordability ratios."""
@@ -186,5 +316,6 @@ def assess(s: Scorer, df: pd.DataFrame, income: float, credit: float, annuity: f
         "top_factors": s.explain(df)[0],
         "sama_check": s.sama_check(income, annuity, retired, existing),
         "eligibility": s.eligibility(age_years, credit, annuity),
+        "amount_suggestion": s.suggest_amount(df, retired, existing),
         "decision_support_only": True,
     }
