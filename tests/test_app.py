@@ -49,7 +49,7 @@ def test_ui_and_demo_applicants():
     from fastapi.testclient import TestClient
     from api.main import app
     c = TestClient(app)
-    assert "Lending Decision Support" in c.get("/").text
+    assert "Mizan" in c.get("/").text
     assert "NAME_INCOME_TYPE" in c.get("/options").json()
     if (MODEL_DIR / "demo_applicants.parquet").exists():
         ids = c.get("/demo/ids").json()

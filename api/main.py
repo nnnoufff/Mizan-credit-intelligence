@@ -1,4 +1,4 @@
-"""FastAPI service + web UI. Run from the project root:  uvicorn api.main:app --reload
+"""Mizan – Credit Intelligence Platform: FastAPI service + web UI. Run from the project root:  uvicorn api.main:app --reload
 UI at http://127.0.0.1:8000/   API docs at http://127.0.0.1:8000/docs"""
 from __future__ import annotations
 
@@ -17,7 +17,7 @@ sys.path.insert(0, str(ROOT / "src"))
 from hc_app.scoring import Scorer, assess, build_row  # noqa: E402
 
 MODEL_DIR = Path(os.environ.get("HC_MODEL_DIR", ROOT / "models" / "final"))
-app = FastAPI(title="Home Credit Lending Decision Support", version="1.0",
+app = FastAPI(title="Mizan – Credit Intelligence Platform", version="1.0",
               description="Decision support only: estimates default risk, applies the SAMA obligation cap and explains the result.")
 _scorer: Optional[Scorer] = None
 _demo: Optional[pd.DataFrame] = None

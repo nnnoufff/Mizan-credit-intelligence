@@ -1,12 +1,8 @@
-# Lending Decision Support (Home Credit)
+# Mizan – Credit Intelligence Platform
 
-A machine-learning product that helps a loan officer decide on consumer-loan applications. For each application it estimates the **probability of default**, routes the application to a **review lane**, checks the **SAMA salary-linked obligation cap** and an age-eligibility rule, and **explains** the main factors behind the estimate.
+**Mizan** is a machine-learning platform that supports credit decisions: it helps a loan officer decide on consumer-loan applications. For each application it estimates the **probability of default**, routes the application to a **review lane**, checks the **SAMA salary-linked obligation cap** and an age-eligibility rule, and **explains** the main factors behind the estimate.
 
 The product is **decision support only**: it never approves or rejects an application by itself.
-
-## Team
-
-Nouf, Mohammed, Razan, Nouf
 
 ## 1. The product in brief
 
@@ -46,9 +42,16 @@ Note: the ensemble row of Model 4 in `summary.csv` (AUC 0.5007) is a known repor
 
 Probability calibration, segment audit, lane statistics and the interpretation of every result are in the training notebook.
 
-## 4. Run the demo
+## 4. Run the platform
 
-Requires Python 3.9 or newer. Run all commands from the project folder (the folder containing this README).
+Requires Python 3.9 or newer.
+
+```bash
+git clone https://github.com/nnnoufff/Mizan-credit-intelligence.git
+cd Mizan-credit-intelligence
+```
+
+Run all commands below from the project folder (the folder containing this README).
 
 **Windows (PowerShell)**
 ```powershell
@@ -112,3 +115,10 @@ The training notebook (`home_credit_pipeline_colab.ipynb`) rebuilds everything f
 - Explanations show the model's contributions, not causes.
 - Models are pickles: library versions must match `manifest.json`.
 - The demo-applicants tab needs `models/final/demo_applicants.parquet`, which is not committed because it contains rows of the competition data. Without it the app still works with manual entry; the notebook (step 19) regenerates the file.
+
+## Team members
+
+- Nouf
+- Mohammed
+- Razan
+- Nouf
