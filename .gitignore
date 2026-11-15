@@ -17,10 +17,6 @@ web/.vercel/
 web/*.tsbuildinfo
 web/next-env.d.ts
 
-# local tool folders: Claude Code settings and skills, taste-skill working files (kept on each computer, not in the repo)
-.claude/
-.taste-skill/
-web/public/landing/.taste-skill/
 
 # local SQLite database for client applications (api/applications.py)
 data/
