@@ -27,3 +27,5 @@ web/public/landing/.taste-skill/
 .env
 .env.*
 web/.env*
+
+api/mizan.sqlite3*

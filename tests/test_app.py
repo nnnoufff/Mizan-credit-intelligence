@@ -121,3 +121,48 @@ def test_one_service_serves_website_and_api():
         assert r.status_code in (302, 307) and r.headers["location"] == "/en/"
         assert "Credit risk scoring" in c.get("/en/").text
         assert c.get("/ar/assess/").status_code == 200
+
+
+def test_customer_application_and_officer_workflow(tmp_path, monkeypatch):
+    os.environ["HC_MODEL_DIR"] = str(MODEL_DIR)
+    monkeypatch.setenv("OFFICER_PASSWORD", "graduation-demo")
+    from fastapi.testclient import TestClient
+    import api.main as main
+    main.DB_PATH = tmp_path / "applications.sqlite3"
+    main._officer_tokens.clear()
+    c = TestClient(main.app)
+
+    customer_applicant = {**APPLICANT}
+    customer_applicant.pop("EXT_SOURCE_2")
+    created = c.post("/api/applications", json={"name": "Sara Ahmed", "phone": "0500000000", "applicant": customer_applicant})
+    assert created.status_code == 201
+    reference = created.json()["reference"]
+    assert created.json()["preliminary_result"] in {"eligible", "review"}
+    assert c.post("/applications", json={"name": "Sara", "phone": "0500000000", "applicant": APPLICANT}).status_code in {404, 405}
+
+    public = c.get(f"/api/applications/{reference}/status")
+    assert public.status_code == 200 and public.json()["status"] == "new"
+    assert c.get("/api/officer/applications").status_code == 401
+    assert c.post("/api/officer/login", json={"password": "wrong"}).status_code == 401
+    token = c.post("/api/officer/login", json={"password": "graduation-demo"}).json()["token"]
+    headers = {"Authorization": f"Bearer {token}"}
+    listing = c.get("/api/officer/applications", headers=headers).json()
+    assert listing["new_count"] == 1 and listing["applications"][0]["reference"] == reference
+    detail = c.get(f"/api/officer/applications/{reference}", headers=headers).json()
+    assert detail["analysis"]["decision_support_only"] and detail["name"] == "Sara Ahmed"
+    assert detail["analysis"]["model_used"] == "2_fallback"
+    rescored = c.post(f"/api/officer/applications/{reference}/rescore", headers=headers,
+                      json={"EXT_SOURCE_1": None, "EXT_SOURCE_2": 0.6, "EXT_SOURCE_3": None})
+    assert rescored.status_code == 200 and rescored.json()["analysis"]["model_used"] == "1_main"
+    assert c.patch(f"/api/officer/applications/{reference}", headers=headers, json={"status": "approved", "note": ""}).status_code == 409
+    assert c.patch(f"/api/officer/applications/{reference}", headers=headers, json={"status": "in_review", "note": "Reviewing documents"}).status_code == 200
+    offer = c.patch(f"/api/officer/applications/{reference}", headers=headers,
+                    json={"status": "amount_proposed", "note": "A lower amount is available",
+                          "proposed_amount": 250000, "proposed_instalment": 4500})
+    assert offer.status_code == 200
+    offered = c.get(f"/api/applications/{reference}/status").json()
+    assert offered["status"] == "amount_proposed" and offered["proposed_amount"] == 250000
+    accepted = c.post(f"/api/applications/{reference}/offer", json={"action": "accept"})
+    assert accepted.status_code == 200 and accepted.json()["status"] == "offer_accepted"
+    final = c.get(f"/api/applications/{reference}/status").json()
+    assert final["status"] == "offer_accepted" and final["officer_note"] == "A lower amount is available"

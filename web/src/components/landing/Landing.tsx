@@ -61,7 +61,7 @@ function Nav({ t, app }: P) {
         </nav>
         <div className="nav__actions">
           <a className="nav__link" href={`/${t.nav.otherLang}`} lang={t.nav.otherLang} hrefLang={t.nav.otherLang}>{t.nav.other}</a>
-          <a className="btn btn--primary" href={app("/assess")}>{t.main}</a>
+          <a className="btn btn--primary" href={app("/apply")}>{t.main}</a>
         </div>
         <button className="nav__toggle" type="button" aria-expanded="false" aria-label={t.menu}>
           <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><path d="M2 5h14M2 13h14" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" /></svg>
@@ -93,7 +93,7 @@ function Hero({ t, app }: P) {
           <h1 id="hero-h">{h.h1}</h1>
           <p className="hero__lead">{h.lead}</p>
           <div className="btn-row">
-            <a className="btn btn--primary" href={app("/assess")}>{t.main}<Arrow /></a>
+            <a className="btn btn--primary" href={app("/apply")}>{t.main}<Arrow /></a>
             <a className="btn btn--secondary" href="#lanes">{h.second}</a>
           </div>
           <dl className="hero-facts">
@@ -133,7 +133,7 @@ function Queue({ t, app }: P) {
       <div className="wrap">
         <div className="grid">
           <h2 id="queue-h" className="span-5">{q.h2}</h2>
-          <div className="span-6 start-7 stack-4"><p>{q.p}</p><p><a className="link" href={app("/assess")}>{q.link}</a></p></div>
+          <div className="span-6 start-7 stack-4"><p>{q.p}</p><p><a className="link" href={app("/apply")}>{q.link}</a></p></div>
         </div>
         <div className="ui app fill mz-c" role="img" aria-label={q.label} data-ui-pause-host="">
           <div className="app__pane app__pane--list">
@@ -336,7 +336,7 @@ function Closing({ t, app }: P) {
         <div className="closing__cta close--word">
           <div className="section-head--split">
             <div><h2 id="close-h">{t.close.h2}</h2><p className="t-lead">{t.close.p}</p></div>
-            <a className="btn btn--primary" href={app("/assess")}>{t.main}<Arrow /></a>
+            <a className="btn btn--primary" href={app("/apply")}>{t.main}<Arrow /></a>
           </div>
           <p className="close__word" aria-hidden="true">{t.close.word}</p>
         </div>

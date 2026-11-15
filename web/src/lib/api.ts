@@ -61,6 +61,33 @@ export interface ApplicantInput {
   EXT_SOURCE_3?: number | null;
 }
 
+export type ApplicationStatus = "new" | "in_review" | "approved" | "rejected" | "amount_proposed" | "offer_accepted" | "offer_rejected";
+export type PreliminaryResult = "eligible" | "review";
+export interface CustomerApplicationResult {
+  reference: string;
+  preliminary_result: PreliminaryResult;
+  preliminary_reason: "eligibility" | "sama_cap" | "additional_review" | "initial_checks_passed";
+  suggestion: Pick<AmountSuggestion, "status" | "suggested_credit" | "suggested_instalment" | "reduction">;
+  status: ApplicationStatus;
+  decision_support_only: true;
+}
+export interface ApplicationStatusResult {
+  reference: string;
+  preliminary_result: PreliminaryResult;
+  preliminary_reason: string;
+  status: ApplicationStatus;
+  officer_note: string;
+  proposed_amount: number | null;
+  proposed_instalment: number | null;
+  created_at: string;
+  updated_at: string;
+}
+export interface OfficerApplicationSummary extends ApplicationStatusResult { name: string; phone: string }
+export interface OfficerApplication extends OfficerApplicationSummary {
+  applicant: ApplicantInput;
+  analysis: ScoreResult;
+}
+
 export interface MonthRecord { dpd: number; dpd_def?: number; inst_total?: number | null; inst_left?: number | null }
 export interface Contract { contract_id: string; history: MonthRecord[] }
 export interface EarlyWarningResult {
@@ -96,10 +123,24 @@ async function call<T>(path: string, init?: RequestInit): Promise<T> {
   return res.json() as Promise<T>;
 }
 
+const officerHeaders = (token: string) => ({ Authorization: `Bearer ${token}` });
+
 export const api = {
   health: () => call<{ status: string; phase2: Record<string, boolean> }>("/health"),
   options: () => call<Options>("/options"),
   score: (a: ApplicantInput) => call<ScoreResult>("/score", { method: "POST", body: JSON.stringify(a) }),
   earlyWarningBatch: (contracts: Contract[]) =>
     call<{ results: EarlyWarningResult[] }>("/early-warning/batch", { method: "POST", body: JSON.stringify({ contracts }) }),
+  createApplication: (name: string, phone: string, applicant: ApplicantInput) =>
+    call<CustomerApplicationResult>("/applications", { method: "POST", body: JSON.stringify({ name, phone, applicant }) }),
+  applicationStatus: (reference: string) => call<ApplicationStatusResult>(`/applications/${encodeURIComponent(reference)}/status`),
+  officerLogin: (password: string) => call<{ token: string }>("/officer/login", { method: "POST", body: JSON.stringify({ password }) }),
+  officerApplications: (token: string) => call<{ applications: OfficerApplicationSummary[]; new_count: number }>("/officer/applications", { headers: officerHeaders(token) }),
+  officerApplication: (token: string, reference: string) => call<OfficerApplication>(`/officer/applications/${encodeURIComponent(reference)}`, { headers: officerHeaders(token) }),
+  updateApplication: (token: string, reference: string, status: ApplicationStatus, note: string, proposed_amount?: number | null, proposed_instalment?: number | null) =>
+    call<{ reference: string; status: ApplicationStatus; officer_note: string; proposed_amount: number | null; proposed_instalment: number | null }>(`/officer/applications/${encodeURIComponent(reference)}`, { method: "PATCH", headers: officerHeaders(token), body: JSON.stringify({ status, note, proposed_amount, proposed_instalment }) }),
+  respondToOffer: (reference: string, action: "accept" | "reject") =>
+    call<{ reference: string; status: ApplicationStatus }>(`/applications/${encodeURIComponent(reference)}/offer`, { method: "POST", body: JSON.stringify({ action }) }),
+  rescoreApplication: (token: string, reference: string, scores: Pick<ApplicantInput, "EXT_SOURCE_1" | "EXT_SOURCE_2" | "EXT_SOURCE_3">) =>
+    call<{ reference: string; applicant: ApplicantInput; analysis: ScoreResult }>(`/officer/applications/${encodeURIComponent(reference)}/rescore`, { method: "POST", headers: officerHeaders(token), body: JSON.stringify(scores) }),
 };

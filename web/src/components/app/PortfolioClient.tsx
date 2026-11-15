@@ -61,33 +61,33 @@ export function PortfolioClient({ locale }: { locale: Locale }) {
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center gap-3">
-        <Button onClick={() => run(SAMPLE)} disabled={busy}>{busy ? <Loader2 className="size-4 animate-spin" aria-hidden /> : <Database className="size-4" aria-hidden />}{P.loadSample}</Button>
+        <Button onClick={() => run(SAMPLE)} disabled={busy}>{busy ? <Loader2 className="size-4 animate-spin" aria-hidden /> : <Database className="size-4" aria-hidden />}{busy ? d.common.loading : P.loadSample}</Button>
         <Button variant="secondary" onClick={() => file.current?.click()} disabled={busy}><Upload className="size-4" aria-hidden />{P.upload}</Button>
         <input ref={file} type="file" accept=".csv,text/csv" className="sr-only" onChange={onFile} aria-label={P.upload} />
         <p className="text-xs text-muted-foreground">{P.csvHelp} <code dir="ltr" className="rounded bg-muted px-1.5 py-0.5 text-[11px]">contract_id, dpd, inst_total, inst_left, dpd_def?</code></p>
       </div>
+
+      {busy && <div className="flex items-center gap-2 rounded-lg bg-muted px-4 py-3 text-sm text-muted-foreground" role="status" aria-live="polite"><Loader2 className="size-4 animate-spin" aria-hidden />{d.common.loading}</div>}
 
       {err && (
         <div role="alert" className="flex gap-3 rounded-lg bg-strict-bg p-4 text-strict ring-1 ring-strict/30"><AlertCircle className="mt-0.5 size-5 shrink-0" aria-hidden /><p className="text-sm">{err}</p></div>
       )}
 
       {!rows ? (
-        <div className="relative isolate overflow-hidden rounded-lg bg-gradient-to-br from-ink to-ink-2 px-6 py-16 text-center text-on-ink shadow-float">
-          <div className="absolute -top-24 start-1/2 -z-10 size-80 -translate-x-1/2 rounded-full bg-gold/15 blur-3xl" aria-hidden />
-          <span className="mx-auto grid size-14 place-items-center rounded-lg bg-white/10 text-gold"><Gauge className="size-7" aria-hidden /></span>
+        <div className="rounded-lg border border-dashed border-border bg-card px-6 py-14 text-center">
+          <span className="mx-auto grid size-12 place-items-center rounded-full bg-muted text-muted-foreground"><Gauge className="size-6" aria-hidden /></span>
           <p className="mt-5 text-lg font-semibold">{P.emptyTitle}</p>
-          <p className="mx-auto mt-1 max-w-md text-sm text-on-ink-muted">{P.emptyLead}</p>
+          <p className="mx-auto mt-1 max-w-md text-sm text-muted-foreground">{P.emptyLead}</p>
         </div>
       ) : (
         <>
           <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4" aria-live="polite">
             <Kpi icon={<CheckCircle2 className="size-5" aria-hidden />} label={P.scored} value={<CountUp value={scored.length} />} note={P.skipped(rows.length - scored.length)} />
-            <div className="rise relative isolate overflow-hidden rounded-lg bg-gradient-to-br from-ink to-ink-2 p-5 text-on-ink shadow-float">
-              <div className="absolute -top-16 end-[-30px] -z-10 size-40 rounded-full bg-[#fda29b]/20 blur-2xl" aria-hidden />
-              <span className="grid size-10 place-items-center rounded-xl bg-white/10 text-[#fda29b]"><AlertTriangle className="size-5" aria-hidden /></span>
-              <p className="mt-4 text-[13px] text-on-ink-muted">{P.highest}</p>
-              <p className="text-3xl font-semibold text-[#fda29b] tabular">{top ? <CountUp value={top.probability_of_arrears_3m! * 100} decimals={1} suffix="%" /> : "—"}</p>
-              <p className="mt-1 text-xs text-on-ink-muted">{top?.contract_id}</p>
+            <div className="rounded-lg bg-card p-5 shadow-card ring-1 ring-border/60">
+              <span className="grid size-10 place-items-center rounded-xl bg-strict-bg text-strict"><AlertTriangle className="size-5" aria-hidden /></span>
+              <p className="mt-4 text-[13px] text-muted-foreground">{P.highest}</p>
+              <p className="text-3xl font-semibold text-strict tabular">{top ? <CountUp value={top.probability_of_arrears_3m! * 100} decimals={1} suffix="%" /> : "—"}</p>
+              <p className="mt-1 text-xs text-muted-foreground">{top?.contract_id}</p>
             </div>
             <Kpi icon={<Target className="size-5" aria-hidden />} label={P.average} value={<CountUp value={avg * 100} decimals={1} suffix="%" />} note={P.across} />
             <Kpi icon={<Gauge className="size-5" aria-hidden />} label={P.accuracy} value="AUC 0.68" note={P.accuracyNote} />

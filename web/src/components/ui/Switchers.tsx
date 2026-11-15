@@ -1,5 +1,4 @@
 "use client";
-import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Languages, Moon, Sun } from "lucide-react";
@@ -9,11 +8,11 @@ export function LangSwitch({ label, target, onInk = false }: { label: string; ta
   const path = usePathname() ?? "/";
   const href = path.replace(/^\/(en|ar)(?=\/|$)/, `/${target}`);
   return (
-    <Link href={href} lang={target} hrefLang={target}
+    <a href={href} lang={target} hrefLang={target}
       className={cx("inline-flex min-h-10 items-center gap-2 rounded-lg px-3 text-sm font-medium transition", onInk ? "text-on-ink hover:bg-white/10" : "text-foreground hover:bg-muted")}>
       <Languages className="size-4" aria-hidden />
       {label}
-    </Link>
+    </a>
   );
 }
 

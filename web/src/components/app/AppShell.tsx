@@ -1,15 +1,13 @@
-import Link from "next/link";
-import { Activity, FilePlus2, Info, ShieldCheck } from "lucide-react";
+import { Activity, Info, LayoutDashboard, ShieldCheck } from "lucide-react";
 import { getDict, type Locale } from "@/i18n/dict";
 import { cx } from "@/lib/format";
 import { Logo } from "@/components/ui/primitives";
 import { LangSwitch, ThemeToggle } from "@/components/ui/Switchers";
 
-type Key = "assess" | "portfolio" | "models";
+type Key = "applications" | "assess" | "portfolio" | "models";
 const ITEMS: { key: Key; Icon: typeof Info }[] = [
-  { key: "assess", Icon: FilePlus2 },
+  { key: "applications", Icon: LayoutDashboard },
   { key: "portfolio", Icon: Activity },
-  { key: "models", Icon: Info },
 ];
 
 export function AppShell({ locale, active, title, lead, actions, children }: { locale: Locale; active: Key; title: string; lead: string; actions?: React.ReactNode; children: React.ReactNode }) {
@@ -17,13 +15,13 @@ export function AppShell({ locale, active, title, lead, actions, children }: { l
   const nav = (mobile: boolean) => ITEMS.map(({ key, Icon }) => {
     const on = key === active;
     return (
-      <Link key={key} href={`/${locale}/${key}`} aria-current={on ? "page" : undefined}
+      <a key={key} href={`/${locale}/${key === "applications" ? "officer" : key}/`} aria-current={on ? "page" : undefined}
         className={cx("relative flex min-h-10 shrink-0 items-center gap-3 rounded-lg px-3 text-sm transition",
           on ? "bg-white/10 font-semibold text-on-ink" : "text-on-ink-muted hover:bg-white/5 hover:text-on-ink")}>
         {on && !mobile && <span className="absolute inset-y-2 start-0 w-[3px] rounded-full bg-gold" aria-hidden />}
         <Icon className="size-[18px]" aria-hidden />
         {d.nav[key]}
-      </Link>
+      </a>
     );
   });
 
@@ -33,7 +31,7 @@ export function AppShell({ locale, active, title, lead, actions, children }: { l
       {/* desktop sidebar */}
       <aside className="relative hidden w-64 shrink-0 flex-col overflow-hidden bg-gradient-to-b from-ink to-ink-2 p-4 lg:flex">
         <div className="pointer-events-none absolute -top-24 start-[-60px] size-64 rounded-full bg-gold/10 blur-3xl" aria-hidden />
-        <Link href={`/${locale}`} className="relative mb-8 rounded-lg px-2 pt-2"><Logo name={d.brand.name} tagline={d.brand.tagline} onInk /></Link>
+        <a href={`/${locale}/`} className="relative mb-8 rounded-lg px-2 pt-2"><Logo name={d.brand.name} tagline={d.brand.tagline} onInk /></a>
         <nav className="relative flex flex-col gap-1" aria-label="Main">{nav(false)}</nav>
         <div className="relative mt-auto flex flex-col gap-3">
           <div className="flex items-center justify-between rounded-xl bg-white/5 p-1 ring-1 ring-white/10">
@@ -49,7 +47,7 @@ export function AppShell({ locale, active, title, lead, actions, children }: { l
       {/* mobile top bar */}
       <header className="sticky top-0 z-30 bg-ink lg:hidden">
         <div className="flex items-center justify-between px-4 py-3">
-          <Link href={`/${locale}`}><Logo name={d.brand.name} onInk /></Link>
+          <a href={`/${locale}/`}><Logo name={d.brand.name} onInk /></a>
           <div className="flex items-center">
             <LangSwitch label={d.common.language} target={d.common.languageCode} onInk />
             <ThemeToggle labels={{ light: d.common.themeLight, dark: d.common.themeDark }} onInk />

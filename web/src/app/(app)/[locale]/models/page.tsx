@@ -4,13 +4,14 @@ import { getDict, isLocale } from "@/i18n/dict";
 import { AppShell } from "@/components/app/AppShell";
 import { Card } from "@/components/ui/primitives";
 import { ServiceStatus } from "@/components/app/ServiceStatus";
+import { OfficerAccessGate } from "@/components/app/OfficerAccessGate";
 
 export default async function ModelsPage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
   if (!isLocale(locale)) notFound();
   const d = getDict(locale), M = d.modelsPage;
   return (
-    <AppShell locale={locale} active="models" title={M.title} lead={M.lead} actions={<ServiceStatus locale={locale} />}>
+    <OfficerAccessGate locale={locale}><AppShell locale={locale} active="models" title={M.title} lead={M.lead} actions={<ServiceStatus locale={locale} />}>
       <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
         {d.models.map((m) => (
           <article key={m.n} className="relative overflow-hidden rounded-lg bg-card p-6 shadow-card ring-1 ring-border/60">
@@ -41,6 +42,6 @@ export default async function ModelsPage({ params }: { params: Promise<{ locale:
           </ul>
         </Card>
       </div>
-    </AppShell>
+    </AppShell></OfficerAccessGate>
   );
 }
