@@ -3,6 +3,7 @@
 import type { CSSProperties } from "react";
 import type { Locale } from "@/i18n/dict";
 import { getLanding, LANDING_DATA, type LandingDict } from "@/i18n/landing";
+import { HAS_CLIENT } from "@/lib/site";
 
 const v = (o: Record<string, string | number>) => o as CSSProperties;
 
@@ -61,6 +62,7 @@ function Nav({ t, app }: P) {
         </nav>
         <div className="nav__actions">
           <a className="nav__link" href={`/${t.nav.otherLang}`} lang={t.nav.otherLang} hrefLang={t.nav.otherLang}>{t.nav.other}</a>
+          {HAS_CLIENT && <a className="nav__link" href={app("/apply")}>{t.apply}</a>}
           <a className="btn btn--primary" href={app("/assess")}>{t.main}</a>
         </div>
         <button className="nav__toggle" type="button" aria-expanded="false" aria-label={t.menu}>

@@ -23,6 +23,9 @@ web/next-env.d.ts
 !.taste-skill/waivers.json
 web/public/landing/.taste-skill/
 
+# local SQLite database for client applications (api/applications.py)
+data/
+
 # local env files
 .env
 .env.*

@@ -17,6 +17,10 @@ The product is **decision support only**: it never approves or rejects an applic
 
 Phase 2 (connected in the API, not yet in the web UI): every `/score` response includes an `amount_suggestion` (Model 3: the largest amount, down to -30%, that satisfies the SAMA cap and the risk threshold), and `/early-warning` scores running contracts from their monthly payment history (Model 4). The amount-suggestion noise gate needs the five `3_monotone__lightgbm__fold*.txt` files from the notebook's `home_credit_runs/models/` folder; without them it is skipped and `noise_gate_applied` is `false`.
 
+**Client applications (demo).** Clients apply at `/en/apply` and follow their applications at `/en/my-applications` (identified by mobile number, no password). Officers review them at `/en/inbox` (demo passcode from the `OFFICER_CODE` environment variable, `mizan-demo` if unset): each application shows Mizan's assessment, and the officer approves, sends an alternative offer (pre-filled with Model 3's suggestion) or rejects. The client then accepts or declines an offer. Applications are stored through SQLAlchemy: in Postgres when `DATABASE_URL` is set (the Render blueprint creates the database), otherwise in a local SQLite file `data/mizan.db`. The demo access is not secure enough for real customers.
+
+**Two sites.** The same code deploys as two sites on Render (see `render.yaml`), sharing one database: the **client site** (`MIZAN_SITE=client`, home, apply, my applications) and the **officer site** (`MIZAN_SITE=officer`, landing, inbox, manual assessment, portfolio, models). Each serves only its own pages and API endpoints. Build both exports with `npm run build:sites` in `web/` (to `web/out-client` and `web/out-officer`). To run them locally: `env MIZAN_SITE=client MIZAN_WEB_DIR=web/out-client .venv/bin/python -m uvicorn api.main:app --port 8001` and the same with `officer`, `web/out-officer` and port 8002.
+
 Gender and age are **not** model inputs. Age is only an eligibility rule; gender and age are used only to audit performance by group.
 
 ## 2. Problem and data

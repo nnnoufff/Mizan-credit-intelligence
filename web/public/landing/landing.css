@@ -116,3 +116,11 @@
   .mz-statement__sub { margin-top: var(--s-6); max-width: 52ch; font-size: var(--t-lead); line-height: 1.7; color: var(--ink); }
   [dir="rtl"] .close__word { line-height: 1.35; }
   [dir="rtl"] .m-arrow { transform: scaleX(-1); }
+
+  /* Arabic hero headline: smaller with more line height, so it does not break into four cramped lines */
+  [dir="rtl"] .hero h1 { font-size: clamp(36px, 4.4vw, 60px); line-height: 1.35; }
+  /* client home: the sample card sits in a panel sized to it, not stretched to the hero's height */
+  .hero__media.mz-stage--fit { height: auto; min-height: 0; flex: none; align-self: center; }
+  @media (max-width: 639px) { .mz-stage--fit .mz-card .mz__rows, .mz-stage--fit .mz-card .mz__label { display: block; } }
+  /* client home: "how it works" ends with its content, without a screen-tall gap above the footer */
+  main > section.section.section--fit:not(.hero) { min-height: 0; }

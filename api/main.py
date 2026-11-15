@@ -3,6 +3,7 @@ Website at http://127.0.0.1:8000/ (the static export in web/out; build it with `
 API at /api/... (and the same endpoints at the root, e.g. /score)   API docs at http://127.0.0.1:8000/docs"""
 from __future__ import annotations
 
+import json
 import os
 import sys
 from pathlib import Path
@@ -17,10 +18,15 @@ from pydantic import BaseModel, Field
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "src"))
 from hc_app.scoring import Scorer, assess, build_row  # noqa: E402
+sys.path.insert(0, str(ROOT))
+from api.applications import build_router  # noqa: E402
 
 MODEL_DIR = Path(os.environ.get("HC_MODEL_DIR", ROOT / "models" / "final"))
-# the website, exported by Next.js (web/next.config.ts, output: "export"); without it "/" shows the original page
+# the website, exported by Next.js (web/next.config.ts, output: "export"); without it "/" shows the original page.
+# The two-site deploy points this at web/out-client or web/out-officer (relative paths are taken from the project root).
 WEB_DIR = Path(os.environ.get("MIZAN_WEB_DIR", ROOT / "web" / "out"))
+if not WEB_DIR.is_absolute():
+    WEB_DIR = ROOT / WEB_DIR
 app = FastAPI(title="Mizan – Credit Intelligence Platform", version="1.0",
               description="Decision support only: estimates default risk, applies the SAMA obligation cap and explains the result.")
 router = APIRouter()   # every endpoint, served at the root and again under /api for the website
@@ -157,8 +163,31 @@ def score_demo(applicant_id: int):
     return out
 
 
-app.include_router(router)
-app.include_router(router, prefix="/api", include_in_schema=False)
+def _score_dict(inp: dict) -> dict:
+    """Score an applicant dict and return plain JSON types (numpy values become Python numbers), ready to store."""
+    out = score(Applicant(**inp))
+    return json.loads(json.dumps(out, default=lambda o: o.item() if hasattr(o, "item") else str(o)))
+
+
+# MIZAN_SITE picks what this service serves (one codebase, two sites on Render, one shared database):
+#   client  -> the customers' site: health, form options, filing and answering their own applications. No scoring
+#              endpoints and no officer endpoints.
+#   officer -> the bank staff's site: scoring, early warning, the demo applicants and the officer inbox.
+#   all     -> everything (the default, for local development and the tests).
+SITE = os.environ.get("MIZAN_SITE", "all").strip().lower()
+if SITE not in ("all", "client", "officer"):
+    raise RuntimeError(f"MIZAN_SITE must be all, client or officer, not {SITE!r}")
+
+if SITE == "client":
+    served = APIRouter()
+    served.add_api_route("/health", health, methods=["GET"])
+    served.add_api_route("/options", options, methods=["GET"])
+else:
+    served = router
+served.include_router(build_router(_score_dict, client=SITE != "officer", officer_routes=SITE != "client"))
+
+app.include_router(served)
+app.include_router(served, prefix="/api", include_in_schema=False)
 
 # the website last, so the API routes and /docs win; html=True serves /en/ as en/index.html and 404.html for unknown pages
 if WEB_DIR.is_dir():

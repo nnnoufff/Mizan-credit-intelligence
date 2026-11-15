@@ -3,6 +3,8 @@ import Script from "next/script";
 import { notFound } from "next/navigation";
 import { LOCALES, dirOf, isLocale } from "@/i18n/dict";
 import { getLanding } from "@/i18n/landing";
+import { CLIENT_HOME_META } from "@/components/landing/ClientHome";
+import { SITE } from "@/lib/site";
 
 /*
   The landing pages: built with the taste-skill kit (web/public/assets), not Tailwind, so they have a root
@@ -18,7 +20,8 @@ export function generateStaticParams() {
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
   const { locale } = await params;
-  const t = getLanding(isLocale(locale) ? locale : "en");
+  const l = isLocale(locale) ? locale : "en";
+  const t = SITE === "client" ? { ...getLanding(l), ...CLIENT_HOME_META[l], ogDescription: CLIENT_HOME_META[l].description } : getLanding(l);
   return {
     // the public address, set as SITE_URL on the host (Vercel), so share images resolve
     metadataBase: new URL(process.env.SITE_URL ?? "http://localhost:3000"),

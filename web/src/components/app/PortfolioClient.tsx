@@ -1,21 +1,11 @@
 "use client";
 import { useRef, useState } from "react";
-import { AlertCircle, AlertTriangle, CheckCircle2, Database, Eye, Gauge, Loader2, Target, Upload, XCircle } from "lucide-react";
+import { AlertCircle, AlertTriangle, CheckCircle2, Eye, Gauge, Loader2, Target, Upload, XCircle } from "lucide-react";
 import { api, ApiError, type Contract, type EarlyWarningResult } from "@/lib/api";
 import { getDict, type Locale } from "@/i18n/dict";
 import { cx, pct } from "@/lib/format";
 import { Button, Card } from "@/components/ui/primitives";
 import { CountUp } from "@/components/ui/CountUp";
-
-const hist = (dpd: number[], total: number, start = total) => dpd.map((x, i) => ({ dpd: x, inst_total: total, inst_left: start - i }));
-// Sample running contracts (same profiles as the design review).
-const SAMPLE: Contract[] = [
-  { contract_id: "C-1042", history: hist([0, 0, 5, 30, 10, 0], 12) },
-  { contract_id: "C-0877", history: hist([0, 3, 0, 0, 0, 0], 18) },
-  { contract_id: "C-2210", history: hist([0, 0, 0, 0, 7, 0, 0, 0], 24) },
-  { contract_id: "C-3391", history: hist(Array(10).fill(0), 36) },
-  { contract_id: "C-0560", history: hist([0, 0, 0, 0, 0, 0, 0, 0, 12], 12, 14) },
-];
 
 function parseCsv(text: string): Contract[] {
   const lines = text.trim().split(/\r?\n/);
@@ -61,8 +51,7 @@ export function PortfolioClient({ locale }: { locale: Locale }) {
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center gap-3">
-        <Button onClick={() => run(SAMPLE)} disabled={busy}>{busy ? <Loader2 className="size-4 animate-spin" aria-hidden /> : <Database className="size-4" aria-hidden />}{P.loadSample}</Button>
-        <Button variant="secondary" onClick={() => file.current?.click()} disabled={busy}><Upload className="size-4" aria-hidden />{P.upload}</Button>
+        <Button onClick={() => file.current?.click()} disabled={busy}>{busy ? <Loader2 className="size-4 animate-spin" aria-hidden /> : <Upload className="size-4" aria-hidden />}{P.upload}</Button>
         <input ref={file} type="file" accept=".csv,text/csv" className="sr-only" onChange={onFile} aria-label={P.upload} />
         <p className="text-xs text-muted-foreground">{P.csvHelp} <code dir="ltr" className="rounded bg-muted px-1.5 py-0.5 text-[11px]">contract_id, dpd, inst_total, inst_left, dpd_def?</code></p>
       </div>

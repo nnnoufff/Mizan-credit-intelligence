@@ -1,12 +1,13 @@
 import Link from "next/link";
-import { Activity, FilePlus2, Info, ShieldCheck } from "lucide-react";
+import { Activity, FilePlus2, Inbox, Info, ShieldCheck } from "lucide-react";
 import { getDict, type Locale } from "@/i18n/dict";
 import { cx } from "@/lib/format";
 import { Logo } from "@/components/ui/primitives";
 import { LangSwitch, ThemeToggle } from "@/components/ui/Switchers";
 
-type Key = "assess" | "portfolio" | "models";
+type Key = "inbox" | "assess" | "portfolio" | "models";
 const ITEMS: { key: Key; Icon: typeof Info }[] = [
+  { key: "inbox", Icon: Inbox },
   { key: "assess", Icon: FilePlus2 },
   { key: "portfolio", Icon: Activity },
   { key: "models", Icon: Info },

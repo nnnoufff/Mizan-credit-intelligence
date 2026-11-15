@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useMemo, useState } from "react";
 import { AlertCircle, ArrowDown, ArrowRight, ArrowUp, Check, ChevronDown, Cpu, Lightbulb, Loader2, RotateCcw, Sparkles } from "lucide-react";
-import { api, ApiError, ELIG_MAX_AGE, LANE_CUTS, type ApplicantInput, type Options, type ScoreResult } from "@/lib/api";
+import { api, ApiError, errorMessage, ELIG_MAX_AGE, LANE_CUTS, type ApplicantInput, type Options, type ScoreResult } from "@/lib/api";
 import { getDict, type Locale } from "@/i18n/dict";
 import { cx, money, num, pct } from "@/lib/format";
 import { Button, Card, LaneBadge, StatusPill } from "@/components/ui/primitives";
@@ -73,7 +73,7 @@ export function AssessClient({ locale }: { locale: Locale }) {
       // results sit below the form on narrow screens: bring them into view
       if (window.innerWidth < 1280) requestAnimationFrame(() => document.getElementById("results")?.scrollIntoView({ behavior: "smooth", block: "start" }));
     }
-    catch (x) { setErr(x instanceof ApiError && x.status === 0 ? d.common.apiDown : x instanceof Error ? x.message : String(x)); }
+    catch (x) { setErr(errorMessage(x, locale, d.common.apiDown)); }
     finally { setBusy(false); }
   }
 
@@ -180,7 +180,7 @@ function EmptyResults({ locale }: { locale: Locale }) {
   );
 }
 
-function Results({ r, locale, age }: { r: ScoreResult; locale: Locale; age: number }) {
+export function Results({ r, locale, age }: { r: ScoreResult; locale: Locale; age: number }) {
   const d = getDict(locale), A = d.assess;
   const s = r.sama_check, e = r.eligibility, sug = r.amount_suggestion;
   const ageEnd = (e.approx_term_years || 0);

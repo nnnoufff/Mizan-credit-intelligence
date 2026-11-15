@@ -5,6 +5,9 @@
   "scripts": {
     "dev": "next dev --port 3000",
     "build": "next build",
+    "build:client": "node scripts/build-site.mjs client",
+    "build:officer": "node scripts/build-site.mjs officer",
+    "build:sites": "node scripts/build-site.mjs client && node scripts/build-site.mjs officer",
     "start": "next start --port 3000",
     "lint": "tsc --noEmit"
   },

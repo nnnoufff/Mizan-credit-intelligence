@@ -1,13 +1,53 @@
-# Render blueprint: one service for everything. FastAPI serves the API (/api/..., /docs) and the website,
-# which is the static export committed in web/out (rebuild it with `npm run build` in web/ after changing the site).
+# Render blueprint: two sites from one codebase, sharing one Postgres database.
+#  - mizan-client:  the customers' site (home, apply, my applications). Serves web/out-client.
+#  - mizan-officer: the bank staff's site (landing, inbox, manual assessment, portfolio, models). Serves web/out-officer.
+# Both run the same FastAPI app; MIZAN_SITE decides which pages and endpoints each one serves.
+# The two static exports are committed: rebuild them with `npm run build:sites` in web/ after changing the site.
 services:
   - type: web
-    name: mizan-api
+    name: mizan-client
     runtime: python
-    plan: free
+    plan: starter   # paid: never sleeps, so visitors never see Render's loading screen
     buildCommand: pip install -r requirements.txt
     startCommand: uvicorn api.main:app --host 0.0.0.0 --port $PORT
     healthCheckPath: /health
     envVars:
       - key: PYTHON_VERSION
         value: 3.13.2
+      - key: MIZAN_SITE
+        value: client
+      - key: MIZAN_WEB_DIR
+        value: web/out-client
+      - key: DATABASE_URL
+        fromDatabase:
+          name: mizan-db
+          property: connectionString
+
+  - type: web
+    name: mizan-officer
+    runtime: python
+    plan: starter   # paid: never sleeps, so visitors never see Render's loading screen
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn api.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.13.2
+      - key: MIZAN_SITE
+        value: officer
+      - key: MIZAN_WEB_DIR
+        value: web/out-officer
+      - key: DATABASE_URL
+        fromDatabase:
+          name: mizan-db
+          property: connectionString
+      # demo passcode for the officer inbox; set it in the Render dashboard (never commit it)
+      - key: OFFICER_CODE
+        sync: false
+
+databases:
+  - name: mizan-db
+    # free: Render deletes a free database after 30 days; switch to a paid plan (e.g. basic-256mb) to keep the data
+    plan: free
+    databaseName: mizan
+    user: mizan

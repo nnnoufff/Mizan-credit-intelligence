@@ -11,4 +11,7 @@ fastapi==0.163.0
 uvicorn[standard]==0.54.0
 pydantic==2.14.3
 httpx==0.28.1
+# client applications (api/applications.py): Render Postgres in production, a local SQLite file otherwise
+sqlalchemy==2.0.44
+psycopg[binary]==3.2.13
 pytest==9.2.0

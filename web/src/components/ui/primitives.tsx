@@ -62,7 +62,9 @@ export function StatusPill({ ok, label }: { ok: boolean; label: string }) {
 }
 
 export function Card({ className, children, as: Tag = "section", ...rest }: { className?: string; children: React.ReactNode; as?: "section" | "div" | "article" } & React.HTMLAttributes<HTMLElement>) {
-  return <Tag {...rest} className={cx("rounded-lg bg-card p-6 shadow-card ring-1 ring-border/60", className)}>{children}</Tag>;
+  // a caller's own padding (p-0, p-4, …) replaces the default instead of fighting it in the CSS order
+  const pad = /(^|\s)p-\d/.test(className ?? "") ? "" : "p-6";
+  return <Tag {...rest} className={cx("rounded-lg bg-card shadow-card ring-1 ring-border/60", pad, className)}>{children}</Tag>;
 }
 
 export function IconChip({ children, tone = "gold" }: { children: React.ReactNode; tone?: "gold" | "ink" }) {
