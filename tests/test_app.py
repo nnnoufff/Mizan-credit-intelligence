@@ -37,7 +37,7 @@ def test_api():
     os.environ["HC_MODEL_DIR"] = str(MODEL_DIR)
     from fastapi.testclient import TestClient
     from api.main import app
-    c = TestClient(app)
+    c = TestClient(app, headers={"X-Officer-Code": "mizan-demo"})
     assert c.get("/health").json()["status"] == "ok"
     r = c.post("/score", json=APPLICANT).json()
     assert 0 <= r["probability_of_default"] <= 1 and len(r["top_factors"]) == 5 and r["decision_support_only"]
@@ -82,7 +82,7 @@ def test_api_phase2():
     os.environ["HC_MODEL_DIR"] = str(MODEL_DIR)
     from fastapi.testclient import TestClient
     from api.main import app
-    c = TestClient(app)
+    c = TestClient(app, headers={"X-Officer-Code": "mizan-demo"})
     assert c.get("/health").json()["phase2"]["early_warning"]
     assert c.post("/score", json=APPLICANT).json()["amount_suggestion"]["available"]
     hist = [{"dpd": 0, "inst_total": 24, "inst_left": 24 - i} for i in range(8)]
@@ -98,7 +98,7 @@ def test_ui_and_demo_applicants():
     os.environ["HC_MODEL_DIR"] = str(MODEL_DIR)
     from fastapi.testclient import TestClient
     from api.main import app
-    c = TestClient(app)
+    c = TestClient(app, headers={"X-Officer-Code": "mizan-demo"})
     assert "Mizan" in c.get("/").text
     assert "NAME_INCOME_TYPE" in c.get("/options").json()
     if (MODEL_DIR / "demo_applicants.parquet").exists():
@@ -112,7 +112,7 @@ def test_one_service_serves_website_and_api():
     os.environ["HC_MODEL_DIR"] = str(MODEL_DIR)
     from fastapi.testclient import TestClient
     from api.main import app, WEB_DIR
-    c = TestClient(app)
+    c = TestClient(app, headers={"X-Officer-Code": "mizan-demo"})
     assert c.get("/api/health").json()["status"] == "ok"
     assert 0 <= c.post("/api/score", json=APPLICANT).json()["probability_of_default"] <= 1
     assert c.post("/score", json=APPLICANT).status_code == 200          # the original paths still answer

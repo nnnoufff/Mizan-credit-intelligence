@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import Optional
 
 import pandas as pd
-from fastapi import APIRouter, FastAPI, HTTPException
+from fastapi import APIRouter, Depends, FastAPI, HTTPException
 from fastapi.responses import FileResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
@@ -19,7 +19,7 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "src"))
 from hc_app.scoring import Scorer, assess, build_row  # noqa: E402
 sys.path.insert(0, str(ROOT))
-from api.applications import build_router  # noqa: E402
+from api.applications import build_router, require_officer  # noqa: E402
 
 MODEL_DIR = Path(os.environ.get("HC_MODEL_DIR", ROOT / "models" / "final"))
 # the website, exported by Next.js (web/next.config.ts, output: "export"); without it "/" shows the original page.
@@ -30,6 +30,7 @@ if not WEB_DIR.is_absolute():
 app = FastAPI(title="Mizan – Credit Intelligence Platform", version="1.0",
               description="Decision support only: estimates default risk, applies the SAMA obligation cap and explains the result.")
 router = APIRouter()   # every endpoint, served at the root and again under /api for the website
+# Scoring, early warning and the demo applicants are officer tools: they need the passcode (X-Officer-Code), like the inbox.
 _scorer: Optional[Scorer] = None
 _demo: Optional[pd.DataFrame] = None
 
@@ -117,7 +118,7 @@ def options():
     return {k: lv.get(k, []) for k in keys}
 
 
-@router.post("/score")
+@router.post("/score", dependencies=[Depends(require_officer)])
 def score(a: Applicant):
     inp = a.model_dump() if hasattr(a, "model_dump") else a.dict()
     return assess(scorer(), build_row(inp), a.AMT_INCOME_TOTAL, a.AMT_CREDIT, a.AMT_ANNUITY, a.age_years, a.retired, a.existing_monthly_obligations)
@@ -128,13 +129,13 @@ def _ew(c: Contract) -> dict:
     return {"contract_id": c.contract_id, **scorer().early_warning(hist)}
 
 
-@router.post("/early-warning")
+@router.post("/early-warning", dependencies=[Depends(require_officer)])
 def early_warning(c: Contract):
     """Model 4: probability that a running contract (currently up to date) falls into arrears within 3 months."""
     return {**_ew(c), "decision_support_only": True}
 
 
-@router.post("/early-warning/batch")
+@router.post("/early-warning/batch", dependencies=[Depends(require_officer)])
 def early_warning_batch(p: Portfolio):
     """Model 4 for many contracts, sorted by risk (highest first; contracts not scored come last)."""
     rows = [_ew(c) for c in p.contracts]
@@ -142,12 +143,12 @@ def early_warning_batch(p: Portfolio):
     return {"results": rows, "decision_support_only": True}
 
 
-@router.get("/demo/ids")
+@router.get("/demo/ids", dependencies=[Depends(require_officer)])
 def demo_ids():
     return demo()["SK_ID_CURR"].astype(int).tolist()
 
 
-@router.post("/score/demo/{applicant_id}")
+@router.post("/score/demo/{applicant_id}", dependencies=[Depends(require_officer)])
 def score_demo(applicant_id: int):
     """Score a stored applicant that carries the full credit history (taken from the unlabeled test file)."""
     d = demo()

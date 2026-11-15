@@ -1,16 +1,17 @@
 import Link from "next/link";
 import { Activity, FilePlus2, Inbox, Info, ShieldCheck } from "lucide-react";
+import { OfficerGate } from "@/components/officer/OfficerGate";
+import { SignOutButton } from "@/components/officer/SignOutButton";
 import { getDict, type Locale } from "@/i18n/dict";
 import { cx } from "@/lib/format";
 import { Logo } from "@/components/ui/primitives";
 import { LangSwitch, ThemeToggle } from "@/components/ui/Switchers";
 
-type Key = "inbox" | "assess" | "portfolio" | "models";
+type Key = "inbox" | "assess" | "portfolio";
 const ITEMS: { key: Key; Icon: typeof Info }[] = [
   { key: "inbox", Icon: Inbox },
   { key: "assess", Icon: FilePlus2 },
   { key: "portfolio", Icon: Activity },
-  { key: "models", Icon: Info },
 ];
 
 export function AppShell({ locale, active, title, lead, actions, children }: { locale: Locale; active: Key; title: string; lead: string; actions?: React.ReactNode; children: React.ReactNode }) {
@@ -29,6 +30,7 @@ export function AppShell({ locale, active, title, lead, actions, children }: { l
   });
 
   return (
+    <OfficerGate locale={locale}>
     <div className="flex min-h-dvh flex-col lg:flex-row">
       <a href="#main" className="sr-only focus:not-sr-only focus:absolute focus:start-4 focus:top-4 focus:z-50 focus:rounded-lg focus:bg-card focus:p-3">{d.common.skip}</a>
       {/* desktop sidebar */}
@@ -37,6 +39,7 @@ export function AppShell({ locale, active, title, lead, actions, children }: { l
         <Link href={`/${locale}`} className="relative mb-8 rounded-lg px-2 pt-2"><Logo name={d.brand.name} tagline={d.brand.tagline} onInk /></Link>
         <nav className="relative flex flex-col gap-1" aria-label="Main">{nav(false)}</nav>
         <div className="relative mt-auto flex flex-col gap-3">
+          <SignOutButton label={d.gate.signOut} onInk />
           <div className="flex items-center justify-between rounded-xl bg-white/5 p-1 ring-1 ring-white/10">
             <LangSwitch label={d.common.language} target={d.common.languageCode} onInk />
             <ThemeToggle labels={{ light: d.common.themeLight, dark: d.common.themeDark }} onInk />
@@ -54,6 +57,7 @@ export function AppShell({ locale, active, title, lead, actions, children }: { l
           <div className="flex items-center">
             <LangSwitch label={d.common.language} target={d.common.languageCode} onInk />
             <ThemeToggle labels={{ light: d.common.themeLight, dark: d.common.themeDark }} onInk />
+            <SignOutButton label={d.gate.signOut} onInk compact />
           </div>
         </div>
         <nav className="flex gap-1 overflow-x-auto px-3 pb-3" aria-label="Main">{nav(true)}</nav>
@@ -72,5 +76,6 @@ export function AppShell({ locale, active, title, lead, actions, children }: { l
         </div>
       </main>
     </div>
+    </OfficerGate>
   );
 }

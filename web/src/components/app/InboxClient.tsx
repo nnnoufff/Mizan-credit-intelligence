@@ -1,6 +1,6 @@
 "use client";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { AlertCircle, Ban, Check, Gift, Inbox, Loader2, LockKeyhole, Phone, RefreshCw } from "lucide-react";
+import { AlertCircle, Ban, Check, Gift, Inbox, Loader2, Phone, RefreshCw } from "lucide-react";
 import { api, ApiError, errorMessage, instalmentOf, type Decision, type OfficerDetail, type OfficerSummary } from "@/lib/api";
 import { getDict, type Locale } from "@/i18n/dict";
 import { cx, money, pct } from "@/lib/format";
@@ -8,15 +8,17 @@ import { Button, Card, LaneBadge } from "@/components/ui/primitives";
 import { StatusBadge } from "@/components/client/StatusBadge";
 import { fmtDate } from "@/components/client/ClientShell";
 import { Results } from "./AssessClient";
+import { getOfficerCode } from "@/lib/officer";
+import { signOutOfficer } from "@/components/officer/OfficerGate";
 
 type Filter = "open" | "waiting" | "closed" | "all";
 const IN: Record<Exclude<Filter, "all">, OfficerSummary["status"][]> = {
   open: ["submitted"], waiting: ["offered"], closed: ["approved", "rejected", "offer_accepted", "offer_declined"],
 };
-const KEY = "mizan-officer-code";
 
 export function InboxClient({ locale }: { locale: Locale }) {
   const d = getDict(locale), I = d.inbox;
+  // the passcode from the site's one sign-in (OfficerGate); this page never asks for it again
   const [code, setCode] = useState<string | null>(null);
   const [ready, setReady] = useState(false);
   const [list, setList] = useState<OfficerSummary[] | null>(null);
@@ -25,14 +27,14 @@ export function InboxClient({ locale }: { locale: Locale }) {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
-  useEffect(() => { try { setCode(sessionStorage.getItem(KEY)); } catch { /* storage blocked */ } setReady(true); }, []);
+  useEffect(() => { setCode(getOfficerCode()); setReady(true); }, []);
 
   const msg = useCallback((x: unknown) => errorMessage(x, locale, d.common.apiDown), [d]);
   const load = useCallback(async (c: string) => {
     setBusy(true); setErr(null);
     try { setList((await api.officerList(c)).applications); }
     catch (x) {
-      if (x instanceof ApiError && x.status === 401) { try { sessionStorage.removeItem(KEY); } catch { /* */ } setCode(null); setErr(I.codeWrong); }
+      if (x instanceof ApiError && x.status === 401) signOutOfficer();   // passcode changed on the server: sign in again
       else setErr(msg(x));
     } finally { setBusy(false); }
   }, [I, msg]);
@@ -42,7 +44,7 @@ export function InboxClient({ locale }: { locale: Locale }) {
   const count = (f: Filter) => (list ?? []).filter((a) => f === "all" || IN[f].includes(a.status)).length;
 
   if (!ready) return null;
-  if (!code) return <CodeGate locale={locale} error={err} onOpen={(c) => { try { sessionStorage.setItem(KEY, c); } catch { /* */ } setCode(c); }} />;
+  if (!code) return null;
 
   return (
     <div className="space-y-5">
@@ -58,9 +60,6 @@ export function InboxClient({ locale }: { locale: Locale }) {
         <div className="ms-auto flex gap-2">
           <Button type="button" variant="secondary" className="min-h-10 px-3 text-sm" onClick={() => load(code)} disabled={busy}>
             {busy ? <Loader2 className="size-4 animate-spin" aria-hidden /> : <RefreshCw className="size-4" aria-hidden />}{I.refresh}
-          </Button>
-          <Button type="button" variant="secondary" className="min-h-10 px-3 text-sm" onClick={() => { try { sessionStorage.removeItem(KEY); } catch { /* */ } setCode(null); setList(null); setSel(null); setErr(null); }}>
-            <LockKeyhole className="size-4" aria-hidden />{I.signOut}
           </Button>
         </div>
       </div>
@@ -102,28 +101,6 @@ export function InboxClient({ locale }: { locale: Locale }) {
         </div>
       </div>
     </div>
-  );
-}
-
-function CodeGate({ locale, error, onOpen }: { locale: Locale; error: string | null; onOpen: (c: string) => void }) {
-  const I = getDict(locale).inbox;
-  const [v, setV] = useState("");
-  return (
-    <Card className="max-w-md">
-      <LockKeyhole className="size-8 text-accent" aria-hidden />
-      <h2 className="mt-3 text-lg font-semibold">{I.codeTitle}</h2>
-      <p className="mt-1 text-sm text-muted-foreground">{I.codeLead}</p>
-      <form className="mt-5 space-y-4" onSubmit={(e) => { e.preventDefault(); if (v.trim()) onOpen(v.trim()); }}>
-        <div>
-          <label htmlFor="officer-code" className="mb-1.5 block text-[13px] font-medium text-muted-foreground">{I.codeLabel}</label>
-          <input id="officer-code" type="password" autoComplete="current-password" value={v} onChange={(e) => setV(e.target.value)}
-            aria-invalid={!!error || undefined} aria-describedby={error ? "code-err" : undefined}
-            className={cx("h-11 w-full rounded-lg bg-background px-3 text-base ring-1 outline-none transition focus:ring-2 focus:ring-ring", error ? "ring-strict" : "ring-border")} />
-          {error && <p id="code-err" className="mt-1.5 text-[13px] text-strict">{error}</p>}
-        </div>
-        <Button type="submit">{I.codeSubmit}</Button>
-      </form>
-    </Card>
   );
 }
 

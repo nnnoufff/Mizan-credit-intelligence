@@ -20,6 +20,13 @@ const en = {
     skip: "Skip to content",
   },
   nav: { inbox: "Applications inbox", assess: "Manual assessment", portfolio: "Portfolio monitoring", models: "About the models", home: "Home" },
+  gate: {
+    title: "Staff sign-in",
+    lead: "This site is for the bank's credit officers. Enter the staff passcode to continue.",
+    label: "Staff passcode", submit: "Sign in", checking: "Checking…",
+    wrong: "That passcode is not right.", empty: "Enter the passcode.",
+    signOut: "Sign out",
+  },
   status: {
     submitted: "Under review", approved: "Approved", rejected: "Not approved", offered: "Offer waiting for you",
     offer_accepted: "Offer accepted", offer_declined: "Offer declined",
@@ -269,6 +276,13 @@ const ar: Dict = {
     skip: "الانتقال إلى المحتوى",
   },
   nav: { inbox: "صندوق الطلبات", assess: "التقييم اليدوي", portfolio: "متابعة المحفظة", models: "عن النماذج", home: "الرئيسية" },
+  gate: {
+    title: "دخول الموظفين",
+    lead: "هذا الموقع مخصص لموظفي الائتمان في البنك. يرجى إدخال رمز الدخول للمتابعة.",
+    label: "رمز الدخول", submit: "تسجيل الدخول", checking: "جارٍ التحقق…",
+    wrong: "رمز الدخول غير صحيح.", empty: "يرجى إدخال رمز الدخول.",
+    signOut: "تسجيل الخروج",
+  },
   status: {
     submitted: "قيد المراجعة", approved: "مقبول", rejected: "غير مقبول", offered: "عرض بانتظار ردك",
     offer_accepted: "تم قبول العرض", offer_declined: "تم رفض العرض",

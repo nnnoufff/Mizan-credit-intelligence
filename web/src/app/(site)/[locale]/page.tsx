@@ -7,6 +7,7 @@ import { SITE } from "@/lib/site";
 export default async function LandingPage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
   if (!isLocale(locale)) notFound();
-  // the client site opens on the customers' home page; the officer site (and the combined dev site) on the bank landing
+  // the client site opens on the customers' home page; the officer site (and the combined dev site) on the bank landing.
+  // The landing is public; the staff sign-in comes when an officer opens the app (AppShell wraps its pages in OfficerGate).
   return SITE === "client" ? <ClientHome locale={locale} /> : <Landing locale={locale} />;
 }

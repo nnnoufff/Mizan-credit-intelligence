@@ -15,4 +15,4 @@ export const HAS_OFFICER = SITE !== "client";
 
 /** Pages that belong to one site only (the locale home page is shared: each site renders its own). */
 export const CLIENT_PAGES = ["apply", "my-applications"];
-export const OFFICER_PAGES = ["inbox", "assess", "portfolio", "models"];
+export const OFFICER_PAGES = ["inbox", "assess", "portfolio"];

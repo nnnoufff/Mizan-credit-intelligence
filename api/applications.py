@@ -87,6 +87,12 @@ def norm_phone(p: str) -> str:
     return digits
 
 
+def require_officer(x_officer_code: Optional[str] = Header(None)) -> None:
+    """FastAPI dependency: the officer passcode in the X-Officer-Code header (demo access, one shared passcode)."""
+    if (x_officer_code or "") != OFFICER_CODE:
+        raise HTTPException(401, "Wrong officer passcode.")
+
+
 def instalment(credit: float, term_months: int) -> float:
     return credit * (1 + PROFIT_RATE * term_months / 12) / term_months
 
@@ -164,8 +170,13 @@ def build_router(score: Callable[[dict], dict], client: bool = True, officer_rou
         return _row(row)
 
     def officer(code: Optional[str]) -> None:
-        if (code or "") != OFFICER_CODE:
-            raise HTTPException(401, "Wrong officer passcode.")
+        require_officer(code)
+
+    @r.get("/officer/check", tags=["officer"])
+    def officer_check(x_officer_code: Optional[str] = Header(None)):
+        """The officer site's sign-in: 200 with the right passcode, 401 otherwise."""
+        officer(x_officer_code)
+        return {"ok": True}
 
     # ---------------- client
     @r.post("/applications", tags=["client"])

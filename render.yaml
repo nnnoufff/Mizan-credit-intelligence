@@ -1,6 +1,6 @@
 # Render blueprint: two sites from one codebase, sharing one Postgres database.
 #  - mizan-client:  the customers' site (home, apply, my applications). Serves web/out-client.
-#  - mizan-officer: the bank staff's site (landing, inbox, manual assessment, portfolio, models). Serves web/out-officer.
+#  - mizan-officer: the bank staff's site (landing, inbox, manual assessment, portfolio; behind one staff sign-in with OFFICER_CODE). Serves web/out-officer.
 # Both run the same FastAPI app; MIZAN_SITE decides which pages and endpoints each one serves.
 # The two static exports are committed: rebuild them with `npm run build:sites` in web/ after changing the site.
 services:

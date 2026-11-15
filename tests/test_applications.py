@@ -85,7 +85,7 @@ def test_site_split(site, tmp_path, monkeypatch):
     assert c.get("/api/health").status_code == 200
     filing = c.post("/api/applications", json=AHMED).status_code
     inbox = c.get("/api/officer/applications", headers=CODE).status_code
-    score = c.post("/api/score", json=dict(age_years=35, AMT_INCOME_TOTAL=15000, AMT_CREDIT=300000, AMT_ANNUITY=9000)).status_code
+    score = c.post("/api/score", headers=CODE, json=dict(age_years=35, AMT_INCOME_TOTAL=15000, AMT_CREDIT=300000, AMT_ANNUITY=9000)).status_code
     if site == "client":
         assert filing == 200 and inbox in (404, 405) and score in (404, 405)
     else:
@@ -93,3 +93,15 @@ def test_site_split(site, tmp_path, monkeypatch):
     monkeypatch.delenv("MIZAN_SITE")
     applications.reset_engine()
     importlib.reload(api.main)
+
+
+def test_officer_tools_need_the_passcode(client):
+    """Scoring and early warning are officer tools: no passcode, no answer; the sign-in check says which."""
+    body = dict(age_years=35, AMT_INCOME_TOTAL=15000, AMT_CREDIT=300000, AMT_ANNUITY=9000)
+    assert client.post("/api/score", json=body).status_code == 401
+    assert client.post("/api/score", headers=CODE, json=body).status_code == 200
+    assert client.post("/api/early-warning/batch", json={"contracts": [{"history": [{"dpd": 0}]}]}).status_code == 401
+    assert client.get("/api/officer/check").status_code == 401
+    assert client.get("/api/officer/check", headers={"X-Officer-Code": "wrong"}).status_code == 401
+    assert client.get("/api/officer/check", headers=CODE).json() == {"ok": True}
+    assert client.get("/api/options").status_code == 200          # the client form still loads its options

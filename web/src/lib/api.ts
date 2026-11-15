@@ -1,3 +1,5 @@
+import { getOfficerCode } from "./officer";
+
 // Types mirror the FastAPI responses in api/main.py and src/hc_app/scoring.py.
 
 export type Lane = "fast" | "normal" | "high_risk";
@@ -105,7 +107,9 @@ export function errorMessage(x: unknown, locale: "en" | "ar", apiDown: string): 
 async function call<T>(path: string, init?: RequestInit): Promise<T> {
   let res: Response;
   try {
-    res = await fetch(`/api${path}`, { ...init, headers: { "Content-Type": "application/json", ...(init?.headers ?? {}) } });
+    // the officer passcode from the one sign-in goes with every request (the officer endpoints need it, the rest ignore it)
+    const code = getOfficerCode();
+    res = await fetch(`/api${path}`, { ...init, headers: { "Content-Type": "application/json", ...(code ? { "X-Officer-Code": code } : {}), ...(init?.headers ?? {}) } });
   } catch {
     throw new ApiError("unreachable", 0);
   }
@@ -185,6 +189,7 @@ export const api = {
   myApplications: (phone: string) => call<{ applications: ClientApp[] }>(`/applications?phone=${encodeURIComponent(phone)}`),
   respond: (id: number, phone: string, accept: boolean) =>
     call<ClientApp>(`/applications/${id}/respond`, { method: "POST", body: JSON.stringify({ client_phone: phone, accept }) }),
+  officerCheck: (code: string) => call<{ ok: boolean }>("/officer/check", { headers: officerHeaders(code) }),
   officerList: (code: string) => call<{ applications: OfficerSummary[] }>("/officer/applications", { headers: officerHeaders(code) }),
   officerGet: (code: string, id: number) => call<OfficerDetail>(`/officer/applications/${id}`, { headers: officerHeaders(code) }),
   decide: (code: string, id: number, d: Decision) =>

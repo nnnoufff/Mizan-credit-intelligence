@@ -119,7 +119,7 @@ const en = {
     cols: [
       ["Product", [["#queue", "Queue"], ["#lanes", "Lanes"], ["#rules", "SAMA cap"]]],
       ["Monitoring", [["#portfolio", "Early warning"], ["#models", "Models"]]],
-      ["App", [["/portfolio", "Portfolio"], ["/models", "Model details"]]],
+      ["App", [["/inbox", "Applications inbox"], ["/portfolio", "Portfolio"]]],
     ] as [string, [string, string][]][],
     language: "Language",
     legal: "© 2026 Mizan · Nouf, Mohammed, Razan, Nouf",
@@ -216,7 +216,7 @@ const ar: LandingDict = {
     cols: [
       ["المنتج", [["#queue", "قائمة الطلبات"], ["#lanes", "مسارات المراجعة"], ["#rules", "نسبة الاستقطاع"]]],
       ["المتابعة", [["#portfolio", "الإنذار المبكر"], ["#models", "النماذج"]]],
-      ["التطبيق", [["/portfolio", "المحفظة"], ["/models", "تفاصيل النماذج"]]],
+      ["التطبيق", [["/inbox", "صندوق الطلبات"], ["/portfolio", "المحفظة"]]],
     ],
     language: "اللغة",
     legal: "© 2026 ميزان · نوف، محمد، رزان، نوف",
