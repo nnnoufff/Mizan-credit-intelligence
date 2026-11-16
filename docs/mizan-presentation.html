@@ -1,0 +1,847 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>مِيزان | من التقييم التقليدي إلى القرارات الائتمانية الذكية</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=Host+Grotesk:wght@400..700&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  --bg:#ffffff; --soft:#f4f6f5; --ink:#14181f; --muted:#5b6470; --line:#e1e5e3;
+  --mint:#a1ffcb; --green:#17b26a; --greenText:#0b7a43; --mintBg:#e9fbf1;
+  --navy:#0b1d31; --navy2:#12304d; --navy3:#1f4a70; --navyLine:#27506f; --navyMuted:#9fb6c9;
+  --risk:#c4320a; --riskBg:#fff1ec; --warn:#a15c07; --warnBg:#fff6e0; --info:#1e5bd6; --infoBg:#edf3ff;
+  --f:"IBM Plex Sans Arabic","Host Grotesk","Geeza Pro",Tahoma,system-ui,sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,Menlo,monospace;
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0;background:#e9ece9;overflow:hidden}
+body{font-family:var(--f);color:var(--ink);-webkit-font-smoothing:antialiased;line-height:1.55}
+h1,h2,h3,p,ul{margin:0}
+ul{padding:0;list-style:none}
+.num{direction:ltr;unicode-bidi:isolate;display:inline-block;font-variant-numeric:tabular-nums}
+svg.ic{width:26px;height:26px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;flex:none}
+
+/* ---------- deck shell ---------- */
+#deck{position:fixed;inset:0 0 56px 0}
+.slide{position:absolute;left:50%;top:50%;width:1280px;height:720px;padding:50px 72px 44px;background:var(--bg);color:var(--ink);
+  transform:translate(-50%,-50%) scale(var(--s,1));opacity:0;visibility:hidden;transition:opacity .5s ease,visibility 0s linear .5s;overflow:hidden}
+.slide.on{opacity:1;visibility:visible;transition:opacity .5s ease}
+.slide.navy{background:var(--navy);color:#fff}
+.slide.navy2{background:linear-gradient(160deg,#0b1d31 0%,#102c47 60%,#14395a 100%);color:#fff}
+.frame{display:flex;flex-direction:column;gap:20px;height:100%}
+.bar{position:fixed;left:0;right:0;bottom:0;height:56px;display:flex;align-items:center;gap:12px;padding:0 20px;background:#fff;border-top:1px solid var(--line);z-index:10}
+.bar .brand{font-weight:700}.bar .brand span{color:var(--muted);font-weight:500;margin-inline-start:8px;font-size:13px}
+.bar .count{margin-inline-start:auto;font-family:var(--mono);font-size:13px;color:var(--muted);direction:ltr}
+.bar button{width:40px;height:40px;border:1px solid var(--line);background:#fff;border-radius:6px;cursor:pointer;display:grid;place-items:center}
+.bar button:hover{background:var(--soft)}
+.bar svg{width:18px;height:18px;stroke:var(--ink);fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+#prog{position:fixed;bottom:55px;right:0;height:3px;background:var(--green);transition:width .4s ease;z-index:11}
+#notes{position:fixed;left:16px;right:16px;bottom:68px;background:var(--ink);color:#fff;border-radius:10px;padding:14px 18px;font-size:16px;z-index:12;display:none;max-width:900px;margin-inline:auto}
+#notes.show{display:block}
+
+/* ---------- type ---------- */
+.eyebrow{display:flex;align-items:center;gap:10px;font-size:15px;font-weight:500;color:var(--muted)}
+.eyebrow b{font-family:var(--mono);font-size:12.5px;font-weight:500;color:var(--greenText);background:var(--mintBg);padding:2px 9px;border-radius:4px;direction:ltr}
+.navy .eyebrow,.navy2 .eyebrow{color:var(--navyMuted)}
+.navy .eyebrow b,.navy2 .eyebrow b{background:rgba(161,255,203,.14);color:var(--mint)}
+.h2{font-size:42px;line-height:1.25;font-weight:700;letter-spacing:-.01em;max-width:24ch}
+.lede{font-size:20px;color:var(--muted);line-height:1.75;max-width:46ch}
+.navy .lede,.navy2 .lede{color:var(--navyMuted)}
+.small{font-size:15px;color:var(--muted);line-height:1.65}
+.navy .small,.navy2 .small{color:var(--navyMuted)}
+.hl{background:linear-gradient(transparent 58%,var(--mint) 58%);padding-inline:3px}
+.navy .hl,.navy2 .hl{background:none;color:var(--mint)}
+.msg{font-size:19px;font-weight:600;padding:14px 18px;border-radius:10px;background:var(--mintBg);color:#075a31;border-inline-start:5px solid var(--green)}
+.navy .msg,.navy2 .msg{background:rgba(161,255,203,.1);color:var(--mint);border-color:var(--mint)}
+.cols{display:grid;grid-template-columns:5fr 7fr;gap:44px;align-items:center;flex:1;min-height:0}
+.cols.even{grid-template-columns:1fr 1fr}.cols.l5{grid-template-columns:7fr 5fr}
+.cols>*{min-width:0}
+.stack{display:flex;flex-direction:column;gap:16px}
+.row{display:flex;gap:14px;align-items:stretch}
+.chip{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;padding:3px 11px;border-radius:999px;white-space:nowrap}
+.chip::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor}
+.chip.ok{color:var(--greenText);background:var(--mintBg)}.chip.info{color:var(--info);background:var(--infoBg)}
+.chip.warn{color:var(--warn);background:var(--warnBg)}.chip.risk{color:var(--risk);background:var(--riskBg)}
+.chip.ghost{color:var(--muted);background:var(--soft)}
+.navy .chip.ok,.navy2 .chip.ok{color:var(--mint);background:rgba(161,255,203,.14)}
+.navy .chip.warn,.navy2 .chip.warn{color:#ffd98a;background:rgba(255,217,138,.14)}
+.navy .chip.ghost,.navy2 .chip.ghost{color:var(--navyMuted);background:rgba(255,255,255,.08)}
+.card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:16px 18px}
+.card.soft{background:var(--soft);border-color:transparent}
+.navy .card,.navy2 .card{background:rgba(255,255,255,.05);border-color:var(--navyLine)}
+.card h3{font-size:19px;font-weight:700}
+.card .k{font-size:13px;color:var(--muted)}
+.navy .card .k,.navy2 .card .k{color:var(--navyMuted)}
+.ico{width:46px;height:46px;border-radius:12px;background:var(--mintBg);color:var(--greenText);display:grid;place-items:center;flex:none}
+.navy .ico,.navy2 .ico{background:rgba(161,255,203,.12);color:var(--mint)}
+.arrow{align-self:center;width:34px;height:34px;flex:none;color:var(--green);fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.navy .arrow,.navy2 .arrow{color:var(--mint)}
+
+/* ---------- animation ---------- */
+.slide.on .a{animation:up .65s cubic-bezier(.2,.8,.2,1) both;animation-delay:calc(var(--i,0) * 90ms)}
+@keyframes up{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
+@keyframes pulse{0%{transform:scale(1);opacity:.7}70%,100%{transform:scale(2.8);opacity:0}}
+@keyframes settle{0%{transform:rotate(-13deg)}40%{transform:rotate(5deg)}65%{transform:rotate(-2deg)}85%{transform:rotate(.6deg)}100%{transform:rotate(0)}}
+@keyframes flow{0%{left:0;opacity:0}10%{opacity:1}90%{opacity:1}100%{left:calc(100% - 14px);opacity:0}}
+@keyframes grow{from{width:0}}
+@keyframes blink{0%,100%{box-shadow:0 0 0 0 rgba(196,50,10,.4)}50%{box-shadow:0 0 0 9px rgba(196,50,10,0)}}
+@keyframes cell{0%{opacity:0;transform:scale(.4)}100%{opacity:1;transform:none}}
+.pulse{transform-box:fill-box;transform-origin:center}
+.slide.on .pulse{animation:pulse 2.6s ease-out infinite}
+.slide.on .beam{animation:settle 2.6s cubic-bezier(.3,1.25,.4,1) both;transform-box:view-box}
+.paused *{animation-play-state:paused!important}
+
+/* ---------- cover ---------- */
+.logo{font-size:150px;line-height:1.05;font-weight:700;letter-spacing:-.02em}
+.sub{font-size:32px;line-height:1.35;font-weight:600;max-width:20ch}
+.team{font-size:20px;font-weight:600;color:var(--greenText);margin-top:8px}
+.cover-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:center;flex:1}
+
+/* ---------- mock windows ---------- */
+.win{background:#fff;border:1px solid var(--line);border-radius:12px;overflow:hidden;box-shadow:0 18px 40px -20px rgba(20,24,31,.35)}
+.win .top{display:flex;align-items:center;gap:6px;padding:10px 14px;background:var(--soft);border-bottom:1px solid var(--line);font-size:12.5px;color:var(--muted)}
+.win .top i{width:10px;height:10px;border-radius:50%;background:#d3d8d5}
+.win .top span{margin-inline-start:10px}
+.win .body{padding:16px}
+.field{display:flex;justify-content:space-between;align-items:center;padding:9px 12px;border:1px solid var(--line);border-radius:8px;font-size:15px;background:#fff}
+.field span:first-child{color:var(--muted);font-size:13.5px}
+.field b{font-weight:600}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:10px 18px;border-radius:8px;border:1px solid var(--ink);background:var(--ink);color:#fff;font:600 15px var(--f);cursor:pointer;min-height:42px}
+.btn.ghost{background:#fff;color:var(--ink);border-color:#cfd4d1}
+.btn.mint{background:var(--mint);color:#0a3d22;border-color:var(--green)}
+.btn:hover{filter:brightness(.96)}
+.tbl{width:100%;border-collapse:collapse;font-size:16px}
+.tbl th,.tbl td{text-align:start;padding:9px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+.tbl th{font-size:12.5px;color:var(--muted);background:var(--soft);font-weight:600}
+.tbl td:first-child{font-weight:600;white-space:nowrap}
+.navy .tbl th,.navy2 .tbl th{background:rgba(255,255,255,.06);color:var(--navyMuted)}
+.navy .tbl td,.navy .tbl th,.navy2 .tbl td,.navy2 .tbl th{border-color:var(--navyLine)}
+.wrap{border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.navy .wrap,.navy2 .wrap{border-color:var(--navyLine)}
+
+/* ---------- steps ---------- */
+.steps{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;position:relative}
+.step{position:relative;background:#fff;border:1px solid var(--line);border-radius:12px;padding:16px 14px;display:flex;flex-direction:column;gap:8px}
+.step .n{width:34px;height:34px;border-radius:50%;background:var(--ink);color:#fff;display:grid;place-items:center;font:600 15px var(--mono)}
+.step h3{font-size:18px;line-height:1.35}
+.step p{font-size:14px;color:var(--muted);line-height:1.55}
+.who{font-size:12px;font-weight:600;padding:2px 9px;border-radius:999px;align-self:flex-start}
+.who.c{background:var(--infoBg);color:var(--info)}.who.m{background:var(--mintBg);color:var(--greenText)}.who.o{background:var(--warnBg);color:var(--warn)}
+.pipe{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.pipe .step .n{background:var(--green);color:#052e18}
+
+/* ---------- dashboard ---------- */
+.dash{display:grid;grid-template-columns:1fr 1.15fr 1.05fr;gap:12px}
+.dash .card{padding:14px 16px}
+.dash h3{font-size:14px;color:var(--muted);font-weight:600;margin-bottom:8px;letter-spacing:.02em}
+.kv{display:flex;justify-content:space-between;align-items:baseline;padding:5px 0;font-size:15px;border-bottom:1px dashed var(--line)}
+.kv:last-child{border-bottom:0}.kv span:first-child{color:var(--muted)}.kv b{font-weight:600}
+.fac{display:grid;grid-template-columns:110px 1fr;gap:10px;align-items:center;font-size:14px;margin:8px 0}
+.tr{height:9px;background:var(--soft);border-radius:5px;overflow:hidden}
+.tr i{display:block;height:100%;border-radius:5px;background:var(--risk);width:0}
+.slide.on .tr i{animation:grow 1.1s cubic-bezier(.2,.8,.2,1) both;width:var(--w)}
+.tr i.g{background:var(--green)}
+.big{font-size:44px;font-weight:700;line-height:1.1;font-variant-numeric:tabular-nums}
+.vs{display:grid;grid-template-columns:1fr auto 1fr;gap:12px;align-items:center}
+.vs .box{border:1px solid var(--line);border-radius:12px;padding:12px 16px}
+.vs .box.new{border:2px solid var(--green);background:var(--mintBg)}
+.vs .lab{font-size:13px;color:var(--muted)}
+.vs .amt{font-size:40px;font-weight:700;line-height:1.1}
+.vs .box:not(.new) .amt{color:var(--muted);text-decoration:line-through;text-decoration-color:var(--risk);text-decoration-thickness:3px}
+.tag{font-size:12.5px;color:var(--warn);background:var(--warnBg);padding:2px 9px;border-radius:5px;font-weight:600}
+
+/* ---------- slider ---------- */
+.slider{display:grid;gap:8px}
+.slider .r{display:flex;justify-content:space-between;align-items:baseline}
+.slider output{font-size:30px;font-weight:700}
+input[type=range]{width:100%;accent-color:var(--green);height:30px}
+.gauge{position:relative;height:46px;margin:30px 0 4px}
+.gauge .bg{position:absolute;inset:14px 0 auto;height:18px;border-radius:9px;background:linear-gradient(to left,#d7f7e5 0 66.7%,#ffe1d8 66.7% 100%)}
+.gauge .fill{position:absolute;top:14px;height:18px;border-radius:9px;background:var(--green);inset-inline-start:0;width:50%;transition:width .3s}
+.gauge .mk{position:absolute;top:0;display:flex;flex-direction:column;align-items:center;transform:translateX(50%);font-size:12px;font-weight:600;white-space:nowrap}
+.gauge .mk i{width:2px;height:46px;background:var(--ink)}
+.verdict{font-size:17px;padding:12px 16px;border-radius:10px;font-weight:600}
+.verdict.ok{background:var(--mintBg);color:var(--greenText)}.verdict.bad{background:var(--riskBg);color:var(--risk)}
+
+/* ---------- decisions / phone ---------- */
+.choices{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.choice{text-align:start;border:1.5px solid var(--line);background:#fff;border-radius:14px;padding:18px;cursor:pointer;display:flex;flex-direction:column;gap:6px;font-family:var(--f);color:var(--ink);transition:transform .15s,border-color .15s,box-shadow .15s}
+.choice:hover{transform:translateY(-3px)}
+.choice strong{font-size:24px}.choice span{font-size:14.5px;color:var(--muted)}
+.choice[aria-pressed=true]{border-color:var(--green);box-shadow:0 0 0 4px var(--mint)}
+.phone{width:290px;margin-inline:auto;border-radius:42px;padding:10px;background:var(--ink)}
+.screen{border-radius:33px;background:#fff;min-height:430px;padding:42px 18px 18px;display:flex;flex-direction:column;gap:12px;position:relative}
+.screen::before{content:"";position:absolute;top:12px;left:50%;width:84px;height:22px;border-radius:12px;background:var(--ink);transform:translateX(-50%)}
+.offer{border:1px solid var(--line);border-radius:14px;padding:12px 14px;display:grid;gap:6px;font-size:14.5px}
+.offer .r{display:flex;justify-content:space-between}.offer .r b{font-weight:600}
+.offer .main b{font-size:26px;color:var(--greenText)}
+
+/* ---------- tech: layers ---------- */
+.aiengine{border:1px solid var(--mint);background:rgba(161,255,203,.08);border-radius:12px;padding:12px 16px;display:flex;flex-direction:column;gap:10px}
+.eng-head{display:flex;gap:14px;align-items:center}.eng-head h3{font-size:21px}.eng-head p{font-size:15px;color:var(--navyMuted)}
+.models{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.mdl{background:rgba(255,255,255,.06);border:1px solid var(--navyLine);border-radius:10px;padding:10px 12px;display:flex;flex-direction:column;gap:3px;align-items:flex-start;min-height:160px}
+.mdl b{font-size:16px;color:var(--mint)}.mdl span{font-size:14px;color:#fff}
+.mdl .mini{width:120px;height:46px;direction:ltr;margin:2px 0}.mdl .algo{height:46px;font-size:30px;color:var(--mint);line-height:46px}
+.mdl code{font-family:var(--mono);font-size:14px;color:var(--mint);direction:ltr;background:rgba(161,255,203,.12);padding:1px 8px;border-radius:6px}
+.mdl small{font-size:12px;color:var(--navyMuted);direction:ltr}
+.ens-note{font-size:13px;color:var(--navyMuted);display:flex;gap:8px;align-items:center}
+.layers{display:flex;flex-direction:column;gap:10px}
+.layer{display:grid;grid-template-columns:54px 1fr auto;gap:16px;align-items:center;padding:14px 18px;border-radius:12px;border:1px solid var(--navyLine);background:rgba(255,255,255,.05)}
+.layer h3{font-size:21px}.layer p{font-size:15px;color:var(--navyMuted)}
+.layer .tech{font-family:var(--mono);font-size:12.5px;color:var(--mint);direction:ltr;text-align:left}
+.layer.core{background:rgba(161,255,203,.12);border-color:var(--mint)}
+#s12 .layers{gap:4px}#s12 .down{height:10px}#s12 .layer{padding:7px 16px;grid-template-columns:40px 1fr auto}#s12 .layer .ico{width:36px;height:36px}#s12 .layer p{display:none}#s12 .layer h3{font-size:18px}
+#s12 .frame{gap:10px}#s12 .h2{font-size:32px}#s12 .mdl .mini{height:38px;width:99px}#s12 .mdl .algo{height:38px;line-height:38px;font-size:26px}#s12 .aiengine{padding:10px 14px;gap:8px}#s12 .mdl{min-height:0;padding:8px 10px}#s12 .eng-head p{display:none}
+.down{display:flex;justify-content:center;height:18px;position:relative}
+.down::after{content:"";width:2px;background:repeating-linear-gradient(to bottom,var(--mint) 0 5px,transparent 5px 9px);height:100%}
+
+/* ---------- engine flow ---------- */
+.flow{display:flex;flex-direction:column;gap:12px;align-items:stretch}
+.node{border-radius:12px;padding:11px 16px;border:1px solid var(--navyLine);background:rgba(255,255,255,.06);display:flex;flex-direction:column;gap:2px;transition:opacity .4s,border-color .4s,background .4s}
+.node b{font-size:17px}.node small{font-size:13px;color:var(--navyMuted)}
+.node.mint{border-color:var(--mint);background:rgba(161,255,203,.1)}
+.node.ink{background:#fff;color:var(--navy)}.node.ink small{color:#44566a}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.dim{opacity:.25}
+.seg{display:inline-flex;padding:4px;background:rgba(255,255,255,.08);border-radius:10px;gap:4px}
+.seg button{border:0;background:transparent;color:var(--navyMuted);padding:9px 16px;border-radius:7px;font:600 14.5px var(--f);cursor:pointer}
+.seg button[aria-pressed=true]{background:#fff;color:var(--navy)}
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.kpi{padding:14px 16px;border-radius:12px;border:1px solid var(--navyLine);background:rgba(255,255,255,.05)}
+.kpi b{display:block;font-size:34px;font-weight:700;color:var(--mint);direction:ltr;text-align:right;font-variant-numeric:tabular-nums;line-height:1.15}
+.kpi span{font-size:14px;color:var(--navyMuted)}
+.kpis.sm{gap:8px}.kpis.sm .kpi{padding:10px 10px}.kpis.sm .kpi b{font-size:24px}.kpis.sm .kpi span{font-size:12.5px}
+.mrow{display:grid;gap:5px}.mh{display:flex;justify-content:space-between;align-items:center;font-size:15px}.mh code{font-family:var(--mono);font-size:12px;color:var(--mint);direction:ltr;background:rgba(161,255,203,.12);padding:1px 8px;border-radius:6px}
+.mrow small{font-size:12px;color:var(--navyMuted);font-family:var(--mono);direction:ltr;text-align:right}
+.rw2{display:grid;grid-template-columns:1fr 110px;gap:12px;align-items:center}.rw2 .t{height:16px;background:rgba(255,255,255,.08);border-radius:4px;overflow:hidden;direction:ltr}
+.rw2 .t i{display:block;height:100%;background:var(--mint);width:0;border-radius:4px}.slide.on .rw2 .t i{animation:grow 1.1s cubic-bezier(.2,.8,.2,1) both;width:var(--w)}
+.rw2 .v{font-family:var(--mono);font-size:14px;font-weight:700;direction:ltr;text-align:left}
+.axis{display:flex;justify-content:space-between;font-size:11px;color:var(--navyMuted);direction:rtl;padding-left:122px}
+.auc{display:grid;gap:9px}
+.auc .rw{display:grid;grid-template-columns:150px 1fr 56px;gap:12px;align-items:center;font-size:14px}
+.auc .t{height:16px;background:rgba(255,255,255,.08);border-radius:4px;overflow:hidden}
+.auc .t i{display:block;height:100%;background:var(--mint);width:0;border-radius:4px}
+.slide.on .auc .t i{animation:grow 1.1s cubic-bezier(.2,.8,.2,1) both;width:var(--w)}
+.auc .t i.b{background:#7f93a6}
+.auc .v{font-family:var(--mono);font-size:13px;direction:ltr;text-align:left}
+.defs{display:grid;grid-template-columns:1fr 1fr;gap:8px 14px}
+.defs div{font-size:14px;line-height:1.5;padding:8px 12px;border-radius:8px;background:rgba(255,255,255,.05)}
+.defs b{color:var(--mint);font-family:var(--mono);font-size:13px;display:block}
+
+/* ---------- early warning ---------- */
+.contract{display:grid;grid-template-columns:96px 1fr auto;gap:14px;align-items:center;padding:13px 16px;border:1px solid var(--navyLine);border-radius:12px;background:rgba(255,255,255,.05)}
+.contract .id{font-size:14px;font-weight:600}.contract .id small{display:block;color:var(--navyMuted);font-weight:400;font-size:12px}
+.cells{display:grid;grid-template-columns:repeat(12,1fr);gap:4px}
+.cells i{height:20px;border-radius:4px;background:rgba(255,255,255,.08)}
+.cells i.p{background:#5fd6a0}.cells i.l{background:#f2b64d}.cells i.m{background:#ff7a5c}
+.slide.on .cells i{animation:cell .35s ease both;animation-delay:calc(var(--k) * 110ms + 400ms)}
+.risk{font-size:13px;font-weight:700;padding:4px 12px;border-radius:999px;white-space:nowrap}
+.risk.lo{color:var(--mint);background:rgba(161,255,203,.14)}.risk.md{color:#ffd98a;background:rgba(255,217,138,.14)}
+.risk.hi{color:#ffb4a3;background:rgba(255,122,92,.2)}
+.slide.on .risk.hi{animation:blink 1.6s ease-out infinite}
+
+/* ---------- compare ---------- */
+.cmp{display:grid;grid-template-columns:1fr 56px 1fr;gap:14px;align-items:center}
+.cmp .box{border-radius:16px;padding:22px 24px;border:1px solid var(--navyLine);background:rgba(255,255,255,.05);min-height:250px;display:flex;flex-direction:column;gap:10px}
+.cmp .box.act{border-color:var(--mint);background:rgba(161,255,203,.1)}
+.cmp h3{font-size:30px}.cmp .lab{font-size:14px;color:var(--navyMuted);font-weight:600;letter-spacing:.06em}
+.chain{display:flex;align-items:center;gap:10px}
+.chain .nd{flex:1;border:1px solid var(--line);border-radius:12px;padding:14px 8px;text-align:center;font-weight:600;font-size:16px;background:#fff;position:relative}
+.chain .nd small{display:block;font-weight:400;color:var(--muted);font-size:12.5px}
+.chain .nd.g{background:var(--mint);border-color:var(--green)}
+.status{display:flex;gap:10px;flex-wrap:wrap}
+.cap{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}
+.cap .card{display:flex;gap:14px;align-items:flex-start;padding:18px}
+
+/* ---------- print ---------- */
+@media print{
+  @page{size:1280px 720px;margin:0}
+  html,body{overflow:visible;height:auto;background:#fff}
+  #deck{position:static;inset:auto}.bar,#prog,#notes{display:none}
+  .slide{position:relative;left:0;top:0;transform:none;opacity:1;visibility:visible;page-break-after:always;break-after:page}
+  .slide .a,.slide .pulse,.slide .beam,.cells i,.tr i,.auc .t i{animation:none!important}
+  .tr i,.auc .t i,.rw2 .t i{width:var(--w)!important}
+}
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+<symbol id="i-table" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18M9 4v16M15 4v16"/></symbol>
+<symbol id="i-calc" viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M8 7h8M8 12h2M12 12h2M16 12h0M8 16h2M12 16h2M16 16h0"/></symbol>
+<symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></symbol>
+<symbol id="i-layers" viewBox="0 0 24 24"><path d="M12 3l9 5-9 5-9-5z"/><path d="M3 13l9 5 9-5"/></symbol>
+<symbol id="i-chart" viewBox="0 0 24 24"><path d="M4 20V4M4 20h16"/><path d="M8 16v-4M12 16V8M16 16v-6"/></symbol>
+<symbol id="i-bulb" viewBox="0 0 24 24"><path d="M9 18h6M10 21h4"/><path d="M12 3a6 6 0 0 0-4 10c1 1 1 2 1 3h6c0-1 0-2 1-3a6 6 0 0 0-4-10z"/></symbol>
+<symbol id="i-bell" viewBox="0 0 24 24"><path d="M6 17V11a6 6 0 0 1 12 0v6l2 2H4z"/><path d="M10 21a2 2 0 0 0 4 0"/></symbol>
+<symbol id="i-db" viewBox="0 0 24 24"><ellipse cx="12" cy="6" rx="8" ry="3"/><path d="M4 6v6c0 1.7 3.6 3 8 3s8-1.3 8-3V6M4 12v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6"/></symbol>
+<symbol id="i-api" viewBox="0 0 24 24"><path d="M8 7l-5 5 5 5M16 7l5 5-5 5M14 4l-4 16"/></symbol>
+<symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/><path d="M9 12l2 2 4-4"/></symbol>
+<symbol id="i-monitor" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 21h8M12 17v4"/></symbol>
+<symbol id="i-puzzle" viewBox="0 0 24 24"><path d="M4 8h4a2 2 0 1 1 4 0h4v4a2 2 0 1 1 0 4v4H4z"/></symbol>
+<symbol id="i-eye" viewBox="0 0 24 24"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></symbol>
+<symbol id="i-coin" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v10M9.5 9.5c0-1 1-1.7 2.5-1.7s2.5.7 2.5 1.7-1 1.5-2.5 1.7-2.5.7-2.5 1.7 1 1.7 2.5 1.7 2.5-.7 2.5-1.7"/></symbol>
+<symbol id="i-arrow" viewBox="0 0 24 24"><path d="M19 12H5M11 6l-6 6 6 6"/></symbol>
+</svg>
+
+<div id="deck">
+
+<!-- ============ 1 · الغلاف ============ -->
+<section class="slide" id="s1" data-note="قدّموا الاسم والشعار والفكرة في جملة واحدة. ميزان تعني التوازن: بين الفرصة والمخاطر، وبين الآلة والإنسان. لا تدخلوا في تفاصيل.">
+  <div class="frame" style="justify-content:center">
+    <div class="cover-grid">
+      <div class="stack" style="gap:14px">
+        <div class="eyebrow a"><b>MIZAN</b> منصة تقييم ائتماني ذكية</div>
+        <h1 class="logo a" style="--i:1">مِيزان</h1>
+        <h2 class="sub a" style="--i:2">من التقييم التقليدي إلى <span class="hl">القرارات الائتمانية الذكية</span></h2>
+        <p class="lede a" style="--i:3">منصة ذكية لتقييم طلبات التمويل للأفراد</p>
+        <p class="team a" style="--i:4">نوف · محمد · رزان · نوف</p>
+      </div>
+      <svg viewBox="0 0 520 470" role="img" aria-label="رسم ميزان يتوازن بين الفرصة والمخاطر">
+        <circle cx="260" cy="150" r="130" fill="none" stroke="#e8ece9"/><circle cx="260" cy="150" r="205" fill="none" stroke="#f0f3f1"/>
+        <circle cx="260" cy="150" r="82" fill="#e9fbf1"/>
+        <path d="M260 130V410" stroke="#14181f" stroke-width="5" stroke-linecap="round"/>
+        <path d="M185 420H335" stroke="#14181f" stroke-width="5" stroke-linecap="round"/>
+        <g class="beam" style="transform-origin:260px 130px">
+          <line x1="70" y1="130" x2="450" y2="130" stroke="#14181f" stroke-width="5" stroke-linecap="round"/>
+          <path d="M90 130L50 250M90 130L130 250M430 130L390 250M430 130L470 250" stroke="#9aa3a0" stroke-width="2"/>
+          <path d="M30 250H150A60 44 0 0 1 30 250Z" fill="#a1ffcb" stroke="#17b26a" stroke-width="2"/>
+          <path d="M370 250H490A60 44 0 0 1 370 250Z" fill="#fff" stroke="#14181f" stroke-width="2"/>
+          <text x="90" y="238" text-anchor="middle" font-size="17" font-weight="600" fill="#0b7a43">الفرصة</text>
+          <text x="430" y="238" text-anchor="middle" font-size="17" font-weight="600" fill="#14181f">المخاطر</text>
+        </g>
+        <circle cx="260" cy="130" r="11" fill="#17b26a"/>
+        <circle class="pulse" cx="260" cy="130" r="11" fill="none" stroke="#17b26a" stroke-width="2"/>
+      </svg>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 2 · اليوم ============ -->
+<section class="slide" id="s2" data-note="ابدؤوا بالقصة: عميل يحتاج تمويلاً. لا تعمموا أن كل البنوك تستخدم أدوات بعينها. قولوا: أدوات تقليدية ومتفرقة في بعض مراحل التقييم.">
+  <div class="frame">
+    <div class="eyebrow a"><b>01</b> كيف تتم عملية تقييم التمويل اليوم؟</div>
+    <div class="cols">
+      <div class="stack">
+        <h2 class="h2 a" style="--i:1">رحلة التمويل تبدأ بطلب... لكن كيف يتم تقييمه؟</h2>
+        <p class="lede a" style="--i:2">تخيلوا عميلاً يحتاج تمويلاً شخصياً. يتقدم بطلب للبنك، ويقدم دخله والتزاماته والمبلغ الذي يحتاجه. بعدها تبدأ رحلة تقييم قدرته على السداد.</p>
+        <p class="small a" style="--i:3">الصورة هنا توضح أدوات تقليدية ومتفرقة في بعض مراحل التقييم، ولا تعني أن البنوك كلها تعمل بالطريقة نفسها.</p>
+      </div>
+      <div class="stack" style="gap:8px">
+        <div class="card row a" style="--i:2;align-items:center"><div class="ico"><svg class="ic"><use href="#i-table"/></svg></div><div><h3>جداول وبيانات</h3><p class="k">معلومات العميل</p></div></div>
+        <svg class="arrow" style="transform:rotate(-90deg)"><use href="#i-arrow"/></svg>
+        <div class="card row a" style="--i:3;align-items:center"><div class="ico"><svg class="ic"><use href="#i-calc"/></svg></div><div><h3>حسابات مالية</h3><p class="k">الدخل والالتزامات</p></div></div>
+        <svg class="arrow" style="transform:rotate(-90deg)"><use href="#i-arrow"/></svg>
+        <div class="card row a" style="--i:4;align-items:center"><div class="ico"><svg class="ic"><use href="#i-user"/></svg></div><div><h3>مراجعة بشرية</h3><p class="k">تقييم الطلب</p></div></div>
+      </div>
+    </div>
+    <div class="msg a" style="--i:5">لكن هل يكفي حساب قدرة العميل على السداد للوصول إلى قرار ائتماني متكامل؟</div>
+  </div>
+</section>
+
+<!-- ============ 3 · الفجوة ============ -->
+<section class="slide" id="s3" data-note="الفكرة: الحساب وحده ليس هو المشكلة. المشكلة أن الصورة الكاملة موزعة، وأن موظف الائتمان هو من يجمعها.">
+  <div class="frame">
+    <div class="eyebrow a"><b>02</b> الفجوة التي نريد معالجتها</div>
+    <h2 class="h2 a" style="--i:1;max-width:30ch">المشكلة ليست في الحساب... بل في الصورة الكاملة</h2>
+    <div class="cap" style="flex:1;align-content:center">
+      <div class="card a" style="--i:2"><div class="ico"><svg class="ic"><use href="#i-puzzle"/></svg></div><div><h3>تشتت البيانات المالية</h3><p class="small">معلومات العميل موزعة بين مصادر وأدوات مختلفة.</p></div></div>
+      <div class="card a" style="--i:3"><div class="ico"><svg class="ic"><use href="#i-eye"/></svg></div><div><h3>محدودية التحليل اليدوي</h3><p class="small">يصعب على المراجعة اليدوية قراءة المخاطر الخفية في كل ملف.</p></div></div>
+      <div class="card a" style="--i:4"><div class="ico"><svg class="ic"><use href="#i-coin"/></svg></div><div><h3>صعوبة اقتراح بديل</h3><p class="small">تحديد مبلغ تمويل بديل مناسب يحتاج حساباً دقيقاً لكل حالة.</p></div></div>
+      <div class="card a" style="--i:5"><div class="ico"><svg class="ic"><use href="#i-layers"/></svg></div><div><h3>نتائج متفرقة للموظف</h3><p class="small">الحاجة إلى جمع نتائج التحليل في مكان واحد لدعم القرار.</p></div></div>
+    </div>
+    <div class="msg a" style="--i:6">نحتاج إلى نظام لا يكتفي بحساب الالتزامات، بل يحلل المخاطر ويدعم اتخاذ القرار.</div>
+  </div>
+</section>
+
+<!-- ============ 4 · الحل ============ -->
+<section class="slide" id="s4" data-note="لحظة الإطلاق. ميزان منصة، وليست حاسبة. ثلاث كلمات: تحليل ذكي، توصيات، قرار بشري. الواجهة المعروضة توضيحية.">
+  <div class="frame">
+    <div class="eyebrow a"><b>03</b> الحل</div>
+    <div class="cols even">
+      <div class="stack">
+        <h2 class="h2 a" style="--i:1">نقدم لكم... <span class="hl">ميزان</span></h2>
+        <p class="lede a" style="--i:2">منصة متكاملة لتقييم طلبات التمويل للأفراد، تجمع بين التحليل المالي، والتنبؤ بالمخاطر الائتمانية، والتوصيات الذكية، مع إبقاء القرار النهائي بيد الموظف.</p>
+        <div class="status a" style="--i:3"><span class="chip ok">تحليل ذكي</span><span class="chip ok">توصيات</span><span class="chip ok">قرار بشري</span></div>
+      </div>
+      <div class="win a" style="--i:2">
+        <div class="top"><i></i><i></i><i></i><span>ميزان · لوحة موظف الائتمان</span></div>
+        <div class="body stack" style="gap:12px">
+          <div class="row" style="justify-content:space-between;align-items:center"><b style="font-size:17px">طلب رقم 1024</b><span class="tag">عرض توضيحي</span></div>
+          <div class="row"><div class="card" style="flex:1"><p class="k">احتمالية التعثر</p><p class="big" style="font-size:34px;color:var(--warn)">متوسطة</p></div><div class="card" style="flex:1"><p class="k">المسار</p><p class="big" style="font-size:28px;color:var(--info)">مراجعة عادية</p></div></div>
+          <div class="vs"><div class="box"><p class="lab">المبلغ المطلوب</p><p class="amt num" style="font-size:28px">150,000</p></div><svg class="arrow"><use href="#i-arrow"/></svg><div class="box new"><p class="lab">المبلغ المقترح</p><p class="amt num" style="font-size:28px;color:var(--greenText)">110,000</p></div></div>
+          <div class="row" style="gap:8px"><span class="btn ghost" style="flex:1">رفض</span><span class="btn mint" style="flex:1">إرسال عرض بديل</span><span class="btn" style="flex:1">موافقة</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 5 · كيف يعمل ============ -->
+<section class="slide" id="s5" data-note="شريحة الخريطة. لا تشرحوا النماذج هنا. وضحوا فقط ماذا يحدث لكل طرف: العميل، ميزان، الموظف.">
+  <div class="frame">
+    <div class="eyebrow a"><b>04</b> كيف يعمل ميزان؟</div>
+    <h2 class="h2 a" style="--i:1;max-width:30ch">رحلة واحدة... من تقديم الطلب إلى القرار</h2>
+    <div class="steps" style="flex:1;align-content:center">
+      <div class="step a" style="--i:2"><div class="n">1</div><span class="who c">العميل</span><h3>يقدم طلب التمويل</h3><p>بياناته ودخله والتزاماته والمبلغ المطلوب.</p></div>
+      <div class="step a" style="--i:3"><div class="n">2</div><span class="who m">ميزان</span><h3>يحلل الطلب</h3><p>البيانات، والقدرة المالية، والمخاطر الائتمانية.</p></div>
+      <div class="step a" style="--i:4"><div class="n">3</div><span class="who o">الموظف</span><h3>يستعرض التحليل</h3><p>لوحة موحدة وتوصية بالمبلغ المناسب عند توفرها.</p></div>
+      <div class="step a" style="--i:5"><div class="n">4</div><span class="who o">الموظف</span><h3>يتخذ القرار</h3><p>موافقة، رفض، أو إرسال عرض بديل.</p></div>
+      <div class="step a" style="--i:6"><div class="n">5</div><span class="who c">العميل</span><h3>يستلم النتيجة</h3><p>يقبل أو يرفض العرض البديل.</p></div>
+    </div>
+    <div class="msg a" style="--i:7">الإنسان في بداية الرحلة وفي نهايتها. ميزان في المنتصف يحلل ويوصي.</div>
+  </div>
+</section>
+
+<!-- ============ 6 · رحلة العميل ============ -->
+<section class="slide" id="s6" data-note="هنا نعرض الواجهة كما يراها العميل. نسمي العميل أحمد وسنتابعه في كل الشرائح. الأرقام توضيحية.">
+  <div class="frame">
+    <div class="eyebrow a"><b>05</b> رحلة العميل</div>
+    <div class="cols l5">
+      <div class="win a" style="--i:1">
+        <div class="top"><i></i><i></i><i></i><span>بوابة العميل · طلب تمويل شخصي</span></div>
+        <div class="body stack" style="gap:9px">
+          <div class="row" style="justify-content:space-between;align-items:center"><b>مرحباً أحمد</b><span class="tag">سيناريو توضيحي</span></div>
+          <div class="field"><span>الاسم</span><b>أحمد</b></div>
+          <div class="field"><span>الدخل الشهري</span><b class="num">12,000 SAR</b></div>
+          <div class="field"><span>الالتزامات الشهرية الحالية</span><b class="num">1,800 SAR</b></div>
+          <div class="field"><span>مبلغ التمويل</span><b class="num">150,000 SAR</b></div>
+          <div class="field"><span>المدة</span><b>60 شهراً</b></div>
+          <span class="btn" style="margin-top:4px">إرسال الطلب</span>
+        </div>
+      </div>
+      <div class="stack">
+        <h2 class="h2 a" style="--i:2;font-size:36px">كل شيء يبدأ من العميل</h2>
+        <div class="wrap a" style="--i:3"><table class="tbl"><thead><tr><th>القسم</th><th>المعلومات</th></tr></thead><tbody>
+          <tr><td>البيانات الشخصية</td><td>المعلومات الأساسية للعميل</td></tr>
+          <tr><td>المعلومات الوظيفية</td><td>الوظيفة والدخل</td></tr>
+          <tr><td>الوضع المالي</td><td>الالتزامات الحالية</td></tr>
+          <tr><td>طلب التمويل</td><td>المبلغ والمدة المطلوبة</td></tr></tbody></table></div>
+        <div class="msg a" style="--i:4">العميل يقدم طلباً واحداً، ومن هنا تبدأ رحلة التحليل.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 7 · من الطلب إلى التحليل ============ -->
+<section class="slide" id="s7" data-note="ننتقل إلى داخل النظام لكن بلغة المنتج: أربع أسئلة يجيب عنها ميزان بالترتيب.">
+  <div class="frame">
+    <div class="eyebrow a"><b>06</b> من الطلب إلى التحليل</div>
+    <h2 class="h2 a" style="--i:1;max-width:30ch">ماذا يحدث بعد إرسال الطلب؟</h2>
+    <div class="pipe" style="flex:1;align-content:center">
+      <div class="step a" style="--i:2"><div class="n">1</div><h3>التحقق من البيانات</h3><p>هل المعلومات مكتملة ومنطقية؟</p></div>
+      <div class="step a" style="--i:3"><div class="n">2</div><h3>تقييم الأهلية</h3><p>هل يستوفي العميل الشروط المحددة؟</p></div>
+      <div class="step a" style="--i:4"><div class="n">3</div><h3>تقييم القدرة المالية</h3><p>هل يتناسب مبلغ التمويل مع دخله والتزاماته؟</p></div>
+      <div class="step a" style="--i:5"><div class="n">4</div><h3>تحليل المخاطر</h3><p>ما احتمالية مواجهة صعوبات في السداد؟</p></div>
+    </div>
+    <div class="row a" style="--i:6;justify-content:center;gap:10px;flex-wrap:wrap"><span class="chip ok">قواعد واضحة قبل أي نموذج</span><span class="chip ok">حد الاستقطاع الشهري</span><span class="chip ok">احتمالية معايرة</span></div>
+    <div class="msg a" style="--i:7">النظام لا ينظر إلى مبلغ التمويل بشكل منفصل، بل يدرس الوضع المالي والائتماني للعميل.</div>
+  </div>
+</section>
+
+<!-- ============ 8 · لوحة الموظف ============ -->
+<section class="slide" id="s8" data-note="من أقوى الشرائح بصرياً. الموظف يرى كل شيء في مكان واحد. القيم توضيحية وليست مخرجات فعلية.">
+  <div class="frame">
+    <div class="row a" style="justify-content:space-between;align-items:center"><div class="eyebrow"><b>07</b> لوحة الموظف</div><span class="tag">نموذج بصري توضيحي، وليس بيانات فعلية من النظام</span></div>
+    <h2 class="h2 a" style="--i:1;max-width:30ch;font-size:38px">الصورة الكاملة أمام موظف الائتمان</h2>
+    <div class="win a" style="--i:2">
+      <div class="top"><i></i><i></i><i></i><span>طلب رقم 1024 · أحمد</span></div>
+      <div class="body dash">
+        <div class="card"><h3>نظرة على المتقدم · Applicant Overview</h3>
+          <div class="kv"><span>الدخل الشهري</span><b class="num">12,000 SAR</b></div>
+          <div class="kv"><span>الالتزامات الحالية</span><b class="num">1,800 SAR</b></div>
+          <div class="kv"><span>مستوى المخاطر</span><b class="chip warn" style="margin:0">متوسط</b></div>
+          <div class="kv"><span>اكتمال البيانات</span><b class="chip ok" style="margin:0">عالٍ</b></div></div>
+        <div class="card"><h3>تحليل المخاطر · Risk Analysis</h3>
+          <p class="k" style="font-size:13px;color:var(--muted)">أبرز العوامل المؤثرة في تقييم الطلب</p>
+          <div class="fac"><span>السجل الائتماني</span><div class="tr"><i class="g" style="--w:62%"></i></div></div>
+          <div class="fac"><span>سلوك السداد</span><div class="tr"><i class="g" style="--w:48%"></i></div></div>
+          <div class="fac"><span>القسط إلى الدخل</span><div class="tr"><i style="--w:70%"></i></div></div>
+          <p class="small" style="margin-top:6px"><span style="color:var(--risk)">■</span> يرفع المخاطر &nbsp; <span style="color:var(--green)">■</span> يخفضها</p></div>
+        <div class="card"><h3>تقييم التمويل · Financing Assessment</h3>
+          <div class="vs" style="grid-template-columns:1fr;gap:8px"><div class="box"><p class="lab">المبلغ المطلوب</p><p class="amt num" style="font-size:30px">150,000 SAR</p></div>
+          <div class="box new"><p class="lab">المبلغ المقترح</p><p class="amt num" style="font-size:30px;color:var(--greenText)">110,000 SAR</p></div></div></div>
+        <div class="card" style="grid-column:1/-1"><h3>مسار المراجعة · Triage Lane</h3>
+          <div style="position:relative;padding-top:28px"><span class="tag" style="position:absolute;top:0;inset-inline-start:52%;background:var(--ink);color:#fff">أحمد</span>
+          <div style="display:grid;grid-template-columns:30fr 60fr 10fr;height:34px;border-radius:8px;overflow:hidden;font-size:13.5px;font-weight:600">
+            <span style="display:grid;place-items:center;background:var(--mintBg);color:var(--greenText)">سريع · أقل 30% خطراً</span>
+            <span style="display:grid;place-items:center;background:var(--infoBg);color:var(--info)">مراجعة عادية</span>
+            <span style="display:grid;place-items:center;background:var(--riskBg);color:var(--risk)">مشدد</span></div></div></div>
+      </div>
+    </div>
+    <div class="msg a" style="--i:3">بدل ما يراجع الموظف كل معلومة بشكل منفصل، يحصل على تحليل موحد يساعده في فهم الطلب.</div>
+  </div>
+</section>
+
+<!-- ============ 9 · التوصية الذكية ============ -->
+<section class="slide" id="s9" data-note="لحظة الـ WOW. جربوا تحريك المبلغ أمام اللجنة. الحد الأعلى بحسب الاستقطاع ثلث الراتب. المبلغ المقترح أقل لأنه يراعي حد المخاطر أيضاً. الأرقام في الشريحة توضيحية لقصة أحمد.">
+  <div class="frame">
+    <div class="row a" style="justify-content:space-between;align-items:center"><div class="eyebrow"><b>08</b> التوصية الذكية</div><span class="tag">أرقام توضيحية للعرض</span></div>
+    <h2 class="h2 a" style="--i:1;max-width:30ch;font-size:38px">ماذا لو كان المبلغ المطلوب أعلى من قدرة العميل؟</h2>
+    <div class="cols even">
+      <div class="stack">
+        <div class="vs a" style="--i:2"><div class="box"><p class="lab">المبلغ المطلوب · يتجاوز الحد المسموح</p><p class="amt num">150,000</p></div><svg class="arrow"><use href="#i-arrow"/></svg><div class="box new"><p class="lab">المبلغ المقترح · بديل قابل للمراجعة</p><p class="amt num" style="color:var(--greenText)">110,000</p></div></div>
+        <p class="lede a" style="--i:3;font-size:18px">ميزان لا يكتفي بتحديد المشكلة، بل يساعد الموظف في استكشاف بديل تمويلي أقل.</p>
+      </div>
+      <div class="card a stack" style="--i:3;gap:10px">
+        <div class="slider"><div class="r"><label for="amt" class="small">جرّب مبلغاً آخر (60 شهراً · دخل 12,000 · التزامات 1,800)</label><output id="amtV" class="num">150,000</output></div>
+          <input type="range" id="amt" min="40000" max="200000" step="5000" value="150000" aria-label="المبلغ المطلوب"></div>
+        <div class="gauge" id="gauge"><div class="bg"></div><div class="fill" id="gfill"></div>
+          <div class="mk" style="inset-inline-start:33.3%"><span>الحد <span class="num">33.3%</span></span><i></i></div></div>
+        <div class="row" style="justify-content:space-between;font-size:14px;color:var(--muted)"><span>القسط <b class="num" id="inst" style="color:var(--ink)">2,500</b> SAR</span><span>الالتزامات ÷ الدخل <b class="num" id="ratio" style="color:var(--ink)">35.8%</b></span></div>
+        <div class="verdict bad" id="verdict">يتجاوز حد الاستقطاع</div>
+        <p class="small" id="limitMsg">أقصى مبلغ يحققه حد الاستقطاع: <b class="num">132,000</b> SAR. المبلغ المقترح 110,000 أقل منه لأنه يراعي حد المخاطر أيضاً.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 10 · القرار البشري ============ -->
+<section class="slide" id="s10" data-note="اضغطوا على كل خيار وشاهدوا ما يتغير. ميزان لا يقرر، الموظف هو من يقرر.">
+  <div class="frame">
+    <div class="eyebrow a"><b>09</b> القرار البشري</div>
+    <h2 class="h2 a" style="--i:1;max-width:30ch">الذكاء الاصطناعي يقترح... والإنسان يقرر</h2>
+    <div class="choices a" style="--i:2">
+      <button class="choice" type="button" data-c="0" aria-pressed="false"><strong>موافقة</strong><span>اعتماد المبلغ المطلوب كما قدمه العميل.</span></button>
+      <button class="choice" type="button" data-c="1" aria-pressed="true"><strong>عرض بديل</strong><span>إرسال المبلغ الأقل المقترح للعميل.</span></button>
+      <button class="choice" type="button" data-c="2" aria-pressed="false"><strong>رفض</strong><span>رفض الطلب بعد مراجعة التحليل.</span></button>
+    </div>
+    <div class="card soft a stack" style="--i:3;flex:1;justify-content:center" id="decOut"></div>
+    <div class="msg a" style="--i:4">الموظف يراجع مخرجات النظام ثم يتخذ القرار النهائي. ميزان يدعم القرار ولا يتخذه.</div>
+  </div>
+</section>
+
+<!-- ============ 11 · العودة إلى العميل ============ -->
+<section class="slide" id="s11" data-note="نختم قصة أحمد: لا يتلقى رفضاً فقط، بل خياراً واضحاً. ثم ننتقل: هل تنتهي مسؤولية النظام بالموافقة؟">
+  <div class="frame">
+    <div class="eyebrow a"><b>10</b> العودة إلى العميل</div>
+    <div class="cols even">
+      <div class="stack">
+        <h2 class="h2 a" style="--i:1">قرار واضح... وخيارات للعميل</h2>
+        <div class="seg a" style="--i:2;background:var(--soft)" id="custSeg"><button type="button" data-v="0" aria-pressed="false" style="color:var(--muted)">تمت الموافقة</button><button type="button" data-v="1" aria-pressed="true" style="color:var(--muted)">عرض بديل</button></div>
+        <p class="lede a" style="--i:3" id="custLede">إذا وصل عرض بديل، يستطيع العميل قبوله أو رفضه.</p>
+        <p class="small a" style="--i:4">شاشة العميل جزء من رؤية المنتج المستهدفة وتوضيحية.</p>
+        <div class="msg a" style="--i:5">لكن هل تنتهي مسؤولية النظام بمجرد الموافقة على التمويل؟ ماذا يحدث بعد أن يبدأ العميل بالسداد؟</div>
+      </div>
+      <div class="phone a" style="--i:2"><div class="screen" id="screen"></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 12 · البنية التقنية ============ -->
+<section class="slide navy" id="s12" data-note="نغير المنظور: عرفتم المنتج، والآن نكشف ما وراءه. التكامل مع البنك عبر واجهات برمجية حسب الأنظمة والصلاحيات.">
+  <div class="frame">
+    <div class="row a" style="justify-content:space-between;align-items:center"><div class="eyebrow"><b>11</b> الجانب التقني · البنية</div></div>
+    <h2 class="h2 a" style="--i:1;max-width:30ch">خلف الواجهة... بنية تقنية متكاملة</h2>
+    <div class="layers" style="flex:1;justify-content:center">
+      <div class="layer a" style="--i:2"><div class="ico"><svg class="ic"><use href="#i-monitor"/></svg></div><div><h3>واجهة المستخدم · User Interface</h3><p>بوابة العميل ولوحة موظف الائتمان</p></div><span class="tech">Web UI</span></div>
+      <div class="down"></div>
+      <div class="layer a" style="--i:3"><div class="ico"><svg class="ic"><use href="#i-api"/></svg></div><div><h3>الخلفية · Backend</h3><p>معالجة الطلبات، وقواعد العمل، وتقديم النماذج</p></div><span class="tech">FastAPI</span></div>
+      <div class="down"></div>
+      <div class="aiengine a" style="--i:4">
+        <div class="eng-head"><div class="ico"><svg class="ic"><use href="#i-bulb"/></svg></div><div><h3>محرك الذكاء وتقييم المخاطر · AI &amp; Risk Engine</h3><p>أربعة نماذج، مع التفسير (SHAP) والتوصيات</p></div></div>
+        <div class="models">
+          <div class="mdl"><b>النموذج 1</b><span>مخاطر التعثر</span><svg class="mini" viewBox="0 0 120 46" aria-hidden="true"><g fill="none" stroke="#a1ffcb" stroke-width="1.4"><path d="M24 8H62Q74 8 74 23M24 23H74M24 38H62Q74 38 74 23"/><path d="M74 23H90" marker-end="url(#ar)"/></g><defs><marker id="ar" viewBox="0 0 8 8" refX="6" refY="4" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0L8 4L0 8z" fill="#a1ffcb"/></marker></defs><g font-family="monospace" font-size="9" fill="#a1ffcb"><circle cx="14" cy="8" r="9" fill="rgba(161,255,203,.15)"/><text x="14" y="11" text-anchor="middle">L</text><circle cx="14" cy="23" r="9" fill="rgba(161,255,203,.15)"/><text x="14" y="26" text-anchor="middle">X</text><circle cx="14" cy="38" r="9" fill="rgba(161,255,203,.15)"/><text x="14" y="41" text-anchor="middle">C</text></g><circle cx="105" cy="23" r="14" fill="#a1ffcb"/><text x="105" y="27" text-anchor="middle" font-size="11" font-weight="700" fill="#0b1f33" font-family="monospace">E</text></svg><code>Ensemble</code></div>
+          <div class="mdl"><b>النموذج 2</b><span>البديل عند غياب التقييم الخارجي</span><svg class="mini" viewBox="0 0 120 46" aria-hidden="true"><g fill="none" stroke="#a1ffcb" stroke-width="1.4"><path d="M24 8H62Q74 8 74 23M24 23H74M24 38H62Q74 38 74 23"/><path d="M74 23H90" marker-end="url(#ar)"/></g><defs><marker id="ar" viewBox="0 0 8 8" refX="6" refY="4" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0L8 4L0 8z" fill="#a1ffcb"/></marker></defs><g font-family="monospace" font-size="9" fill="#a1ffcb"><circle cx="14" cy="8" r="9" fill="rgba(161,255,203,.15)"/><text x="14" y="11" text-anchor="middle">L</text><circle cx="14" cy="23" r="9" fill="rgba(161,255,203,.15)"/><text x="14" y="26" text-anchor="middle">X</text><circle cx="14" cy="38" r="9" fill="rgba(161,255,203,.15)"/><text x="14" y="41" text-anchor="middle">C</text></g><circle cx="105" cy="23" r="14" fill="#a1ffcb"/><text x="105" y="27" text-anchor="middle" font-size="11" font-weight="700" fill="#0b1f33" font-family="monospace">E</text></svg><code>Ensemble</code></div>
+          <div class="mdl"><b>النموذج 3</b><span>اقتراح المبلغ</span><div class="algo">↗</div><code>LightGBM</code><small>Monotone constraint</small></div>
+          <div class="mdl"><b>النموذج 4</b><span>الإنذار المبكر</span><div class="algo">◔</div><code>LightGBM</code><small>لقطات شهرية للدفعات</small></div>
+        </div>
+        <p class="ens-note"><svg viewBox="0 0 12 12" width="12" height="12"><circle cx="6" cy="6" r="5" fill="#a1ffcb"/></svg> Ensemble = تجميع ثلاثة نماذج (L = LightGBM · X = XGBoost · C = CatBoost) في تنبؤ واحد</p>
+      </div>
+      <div class="down"></div>
+      <div class="layer a" style="--i:5"><div class="ico"><svg class="ic"><use href="#i-db"/></svg></div><div><h3>البيانات والنماذج · Data &amp; Model Storage</h3><p>بيانات تاريخية، ملفات النماذج، وسجلات الطلبات</p></div><span class="tech">Parquet · Pickle</span></div>
+    </div>
+    <p class="small a" style="--i:6">التكامل مع أنظمة البنك يكون عبر واجهات برمجية (APIs)، حسب الأنظمة والصلاحيات المتاحة.</p>
+  </div>
+</section>
+
+<!-- ============ 13 · البيانات ============ -->
+<section class="slide navy" id="s13" data-note="لا نسرد أسماء الملفات. نعرض المجموعات وماذا نستفيد منها، ثم ما فعلناه بالبيانات قبل التدريب.">
+  <div class="frame">
+    <div class="eyebrow a"><b>12</b> البيانات المستخدمة</div>
+    <h2 class="h2 a" style="--i:1;max-width:34ch;font-size:38px">القرار الذكي يبدأ من البيانات: ثمانية جداول مترابطة من Home Credit</h2>
+    <div class="cols l5">
+      <div class="wrap a" style="--i:2"><table class="tbl"><thead><tr><th>مجموعة البيانات</th><th>ماذا نستفيد منها؟</th></tr></thead><tbody>
+        <tr><td>Application</td><td>معلومات العميل وطلب التمويل</td></tr>
+        <tr><td>Bureau</td><td>التاريخ الائتماني</td></tr>
+        <tr><td>Previous Applications</td><td>الطلبات السابقة ونتائجها</td></tr>
+        <tr><td>Installments</td><td>سلوك سداد الأقساط</td></tr>
+        <tr><td>Credit Card</td><td>استخدام البطاقات الائتمانية</td></tr>
+        <tr><td>POS / Cash</td><td>بيانات التمويل والسداد السابقة</td></tr></tbody></table></div>
+      <div class="stack">
+        <div class="card a stack" style="--i:3;gap:10px"><b style="font-size:17px">ما نفذناه على البيانات</b>
+          <div class="row" style="gap:8px;flex-wrap:wrap"><span class="chip ok">تنظيف البيانات</span><span class="chip ok">هندسة الخصائص</span><span class="chip ok">معالجة القيم المفقودة</span><span class="chip ok">ربط الجداول على مستوى العميل</span><span class="chip ok">منع تسرب المعلومات المستقبلية</span></div></div>
+        <div class="kpis a" style="--i:4;grid-template-columns:1fr 1fr"><div class="kpi"><b>307,511</b><span>طلب تمويل سابق</span></div><div class="kpi"><b>8.1%</b><span>نسبة المتعثرين</span></div></div>
+        <div class="msg a" style="--i:5">لم نستخدم البيانات كما هي، حولناها إلى خصائص قابلة للتحليل والتنبؤ.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 14 · محرك المخاطر ============ -->
+<section class="slide navy" id="s14" data-note="جربوا تبديل درجات الائتمان الخارجية. عند غيابها كلها ينتقل ميزان تلقائياً للنموذج الثاني. النموذج النهائي المختار للنموذج الأول هو Ensemble.">
+  <div class="frame">
+    <div class="row a" style="justify-content:space-between;align-items:center"><div class="eyebrow"><b>13</b> محرك تقييم المخاطر</div></div>
+    <h2 class="h2 a" style="--i:1;max-width:34ch;font-size:38px">كيف يتنبأ ميزان بالمخاطر الائتمانية؟</h2>
+    <div class="cols l5" style="align-items:center">
+      <div class="flow engine a" id="engine" style="--i:2">
+        <div class="two">
+          <div class="node"><b>المدخل · Input</b><small>خصائص الطلب: بيانات الطلب والسجل والسلوك</small></div>
+          <div class="node"><b>المخرج · Output</b><small>احتمال التعثر (رقم من 0 إلى 100%)، ثم مسار المراجعة:</small><div style="display:flex;gap:6px;margin-top:8px;direction:ltr"><div style="flex:1;border-radius:8px;padding:6px 8px;background:rgba(255,255,255,.06);border-top:3px solid #a1ffcb;direction:ltr;text-align:center"><div style="font-size:13px;font-weight:700;color:#fff">Fast</div><div style="font-family:var(--mono);font-size:11px;white-space:nowrap;color:#a1ffcb">≤ 2.6%</div></div><div style="flex:1;border-radius:8px;padding:6px 8px;background:rgba(255,255,255,.06);border-top:3px solid #ffd98a;direction:ltr;text-align:center"><div style="font-size:13px;font-weight:700;color:#fff">Normal</div><div style="font-family:var(--mono);font-size:11px;white-space:nowrap;color:#ffd98a">2.6 – 19.6%</div></div><div style="flex:1;border-radius:8px;padding:6px 8px;background:rgba(255,255,255,.06);border-top:3px solid #ff9b85;direction:ltr;text-align:center"><div style="font-size:13px;font-weight:700;color:#fff">High Risk</div><div style="font-family:var(--mono);font-size:11px;white-space:nowrap;color:#ff9b85">≥ 19.6%</div></div></div></div>
+        </div>
+        <div class="two">
+          <div class="node mint" id="nA"><b>النموذج 1 · الرئيسي</b><small>الدرجات الخارجية متوفرة</small></div>
+          <div class="node" id="nB"><b>النموذج 2 · البديل</b><small>الدرجات الثلاث كلها غائبة</small></div>
+        </div>
+        <div class="node" style="display:flex;align-items:center;justify-content:space-between;gap:16px"><div><b style="display:block">التنبؤ المجمّع · Ensemble</b><small style="display:block;margin-top:4px">تجميع ثلاثة نماذج في تنبؤ واحد (متوسط احتمالاتها)</small></div><svg viewBox="0 0 250 64" style="width:250px;height:64px;direction:ltr;flex:none" aria-hidden="true"><defs><marker id="ar2" viewBox="0 0 8 8" refX="6" refY="4" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0L8 4L0 8z" fill="#a1ffcb"/></marker></defs><g fill="none" stroke="#a1ffcb" stroke-width="1.5"><path d="M62 12H122Q140 12 140 32M62 32H140M62 52H122Q140 52 140 32M140 32H178" marker-end="url(#ar2)"/></g><g font-family="monospace" font-size="11" fill="#a1ffcb"><rect x="2" y="2" width="60" height="20" rx="6" fill="rgba(161,255,203,.14)"/><text x="32" y="16" text-anchor="middle">LightGBM</text><rect x="2" y="22" width="60" height="20" rx="6" fill="rgba(161,255,203,.14)"/><text x="32" y="36" text-anchor="middle">XGBoost</text><rect x="2" y="42" width="60" height="20" rx="6" fill="rgba(161,255,203,.14)"/><text x="32" y="56" text-anchor="middle">CatBoost</text></g><rect x="182" y="14" width="66" height="36" rx="18" fill="#a1ffcb"/><text x="215" y="37" text-anchor="middle" font-size="13" font-weight="700" font-family="monospace" fill="#0b1f33">Ensemble</text></svg></div>
+                <div class="node ink" style="display:grid;grid-template-columns:1fr 230px;gap:24px;align-items:center"><div><b style="display:block">الشفافية في القرار · أخلاقيات الذكاء</b><small style="display:block;margin-top:4px">نعرض للموظف أهم عوامل كل تقييم (SHAP)، ولا نستخدم الجنس ولا العمر في النموذج، والقرار النهائي بيد الإنسان</small></div><div style="display:flex;flex-direction:column;gap:6px;direction:ltr;border-right:0;padding-right:0"><span style="font-size:11px;color:#6b7a8c">Decision factors (illustrative)</span><div style="display:grid;grid-template-columns:92px 1fr;gap:8px;align-items:center"><span style="font-size:12px;color:#14233a">Income</span><i style="display:block;height:9px;width:85%;border-radius:3px;background:#0b6e4f"></i></div><div style="display:grid;grid-template-columns:92px 1fr;gap:8px;align-items:center"><span style="font-size:12px;color:#14233a">Credit score</span><i style="display:block;height:9px;width:62%;border-radius:3px;background:#0b6e4f"></i></div><div style="display:grid;grid-template-columns:92px 1fr;gap:8px;align-items:center"><span style="font-size:12px;color:#14233a">Late payments</span><i style="display:block;height:9px;width:45%;border-radius:3px;background:#b4412f"></i></div></div></div>
+      </div>
+      <div class="stack">
+        <div class="stack" style="gap:8px"><span class="small">درجات الائتمان الخارجية للعميل:</span>
+          <div class="seg"><button type="button" id="extOn" aria-pressed="true">متوفرة</button><button type="button" id="extOff" aria-pressed="false">غير متوفرة</button></div></div>
+        <div class="card a" style="--i:3"><b style="font-size:16px">ما هي درجات الائتمان الخارجية؟</b>
+          <p class="small" style="margin-top:8px;line-height:1.7">ثلاث درجات جاهزة يقدمها طرف خارجي عن تاريخ العميل الائتماني. هي أقوى مؤشر في النموذج. عندما تغيب كلها للعميل، ينتقل ميزان تلقائياً إلى النموذج 2 الذي لا يعتمد عليها.</p></div>
+        <div class="kpi a" style="--i:4"><b id="aucV">0.7907</b><span id="aucK">AUC للنموذج الرئيسي</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 15 · من التنبؤ إلى التوصية ============ -->
+<section class="slide navy" id="s15" data-note="النموذج الثالث مقيد: لا يسمح بأن ينخفض الخطر عندما يرتفع المبلغ. نستخدمه ليبحث عن أكبر مبلغ يحقق الحد وعتبة المخاطر. الرسم توضيحي. الأرقام من التحقق المتقاطع على بيانات Home Credit.">
+  <div class="frame">
+    <div class="row a" style="justify-content:space-between;align-items:center"><div class="eyebrow"><b>14</b> من التنبؤ إلى التوصية</div></div>
+    <h2 class="h2 a" style="--i:1;max-width:34ch;font-size:38px">كيف ننتقل من معرفة المخاطر إلى اقتراح مبلغ بديل؟</h2>
+    <div class="cols even">
+      <div class="stack">
+        <div class="two a" style="--i:2">
+          <div class="node"><b>المدخل · Input</b><small>خصائص الطلب + المبلغ المطلوب</small></div>
+          <div class="node"><b>المخرج · Output</b><small>أكبر مبلغ مقترح (رقم) يبقى احتمال التعثر عنده تحت العتبة</small></div>
+        </div>
+        <ul class="stack a" style="--i:2;gap:10px">
+          <li class="card"><b>نموذج تصنيف</b> (LightGBM) يتنبأ باحتمالية التعثر، مع <b>قيد اتجاه</b>: كلما زاد المبلغ المطلوب، يرتفع الخطر أو يبقى كما هو، ولا ينخفض أبداً.</li>
+          <li class="card">ننقص المبلغ المطلوب بخطوات 1% حتى 30% ونقيس الخطر عند كل خطوة. لا يظهر الاقتراح إلا إذا كان أثره أكبر من <b>ضوضاء النموذج</b>.</li>
+        </ul>
+        <div class="a" style="--i:3"><div class="card" style="padding:12px 16px;display:flex;align-items:center;justify-content:space-between"><span class="small">دقة النموذج · AUC</span><b style="font-size:30px;color:var(--mint)">0.7881</b></div></div>
+      </div>
+      <div class="card a" style="--i:3;padding:14px">
+        <svg viewBox="0 0 520 330" role="img" aria-label="رسم توضيحي: الخطر يرتفع مع المبلغ، والمبلغ المقترح تحت عتبة المخاطر" style="width:100%;height:auto">
+          <path d="M50 290H500M50 290V30" stroke="#6f8aa3" stroke-width="1.5" fill="none"/>
+          <path d="M50 250C150 245 230 225 300 175S440 80 490 55" stroke="#a1ffcb" stroke-width="4" fill="none" stroke-linecap="round"/>
+          <path d="M50 150H500" stroke="#ffd98a" stroke-width="2" stroke-dasharray="7 6"/>
+          <text x="496" y="140" text-anchor="end" font-size="14" fill="#ffd98a">عتبة المخاطر</text>
+          <path d="M255 290V196" stroke="#a1ffcb" stroke-width="2" stroke-dasharray="4 5"/>
+          <circle cx="255" cy="196" r="9" fill="#a1ffcb"/>
+          <text x="255" y="316" text-anchor="middle" font-size="14" fill="#a1ffcb">المقترح</text>
+          <path d="M420 290V102" stroke="#ff9b85" stroke-width="2" stroke-dasharray="4 5"/>
+          <circle cx="420" cy="102" r="9" fill="#ff9b85"/>
+          <text x="420" y="316" text-anchor="middle" font-size="14" fill="#ff9b85">المطلوب</text>
+          <text x="46" y="24" font-size="13" fill="#9fb6c9" text-anchor="end">الخطر</text>
+          <text x="500" y="282" font-size="13" fill="#9fb6c9" text-anchor="end">مبلغ التمويل ←</text>
+        </svg>
+        <p class="small" style="text-align:center">رسم توضيحي لفكرة النموذج المقيد</p>
+      </div>
+    </div>
+    <div class="msg a" style="--i:4">هدفنا ليس مجرد توقع احتمالية التعثر، بل استخدام التوقعات لدعم اقتراح بديل تمويلي قابل للمراجعة.</div>
+  </div>
+</section>
+
+<!-- ============ 17 · ما بعد القرار ============ -->
+<section class="slide navy2" id="s17" data-note="هنا نتحول من تقييم الطلب إلى متابعة السداد. ابدؤوا بالسؤال ثم اعرضوا المقارنة.">
+  <div class="frame">
+    <div class="eyebrow a"><b>15</b> ما بعد القرار</div>
+    <h2 class="h2 a" style="--i:1;max-width:30ch">هل تنتهي رحلة الذكاء الاصطناعي عند الموافقة؟</h2>
+    <p class="lede a" style="--i:2;max-width:70ch">حتى الآن، ميزان يساعد البنك على تقييم العميل قبل منح التمويل. لكن بعد الموافقة، تبدأ رحلة جديدة: رحلة السداد.</p>
+    <div class="cmp a" style="--i:3;flex:1">
+      <div class="box"><span class="lab">قبل التمويل · BEFORE FINANCING</span><h3>تقييم الائتمان</h3><p class="lede" style="font-size:18px">تقييم الطلب، وتحليل المخاطر، ودعم قرار التمويل.</p><span class="chip ok" style="align-self:flex-start">النماذج 1 و2 و3</span></div>
+      <svg class="arrow" style="width:44px;height:44px"><use href="#i-arrow"/></svg>
+      <div class="box act"><span class="lab" style="color:var(--mint)">بعد التمويل · AFTER FINANCING</span><h3>الإنذار المبكر</h3><p class="lede" style="font-size:18px">متابعة سلوك السداد واكتشاف مؤشرات التعثر المبكرة.</p><span class="chip warn" style="align-self:flex-start">النموذج 4</span></div>
+    </div>
+    <div class="msg a" style="--i:4">وهنا ننتقل من تقييم مخاطر التمويل إلى مراقبة مخاطر السداد.</div>
+  </div>
+</section>
+
+<!-- ============ 18 · النموذج الرابع ============ -->
+<section class="slide navy2" id="s18" data-note="لا نقول إنه يمنع التعثر. هو يحدد مؤشرات مبكرة تساعد البنك على التصرف. وهو مربوط بالتطبيق.">
+  <div class="frame">
+    <div class="row a" style="justify-content:space-between;align-items:center"><div class="eyebrow"><b>16</b> النموذج 4 · الإنذار المبكر</div></div>
+    <h2 class="h2 a" style="--i:1;max-width:34ch;font-size:38px">اكتشاف مؤشرات التعثر قبل وقوعه</h2>
+    <div class="cols even" style="align-items:start">
+      <div class="stack" style="gap:12px">
+        <div class="two a" style="--i:2">
+          <div class="node"><b>المدخل · Input</b><small>لقطة شهرية من سجل سداد العقد: أيام التأخر السابقة، الأقساط المتبقية، عمر العقد</small></div>
+          <div class="node"><b>المخرج · Output</b><small>احتمال التأخر خلال 3 أشهر (رقم من 0 إلى 100%)</small></div>
+        </div>
+        <div class="card a" style="--i:3;padding:12px 16px"><b>نموذج تصنيف</b> (LightGBM) يتابع العقود القائمة ويقدّر احتمال دخولها في تأخر، ليساعد البنك في تحديد الحالات التي تستحق المتابعة.</div>
+        <div class="kpis a" style="--i:4;grid-template-columns:1fr 1fr"><div class="kpi"><b>0.6783</b><span>AUC</span></div><div class="kpi"><b>0.1451</b><span>PR-AUC</span></div></div>
+        <div class="card a" style="--i:5;padding:12px 16px"><b style="font-size:16px">لماذا النتيجة أقل؟</b>
+          <p style="margin:8px 0 0;font-size:15px;line-height:1.7;color:var(--navyMuted)">لا تتوفر لدينا <b style="color:#fff">بيانات العميل الشهرية بشكل لحظي (Real-time Data)</b>، فيعتمد النموذج على سجل سداد العقد وحده. عند ربطه ببيانات البنك الحية نتوقع أن تتحسن دقته.</p></div>
+      </div>
+      <div class="stack" style="gap:10px">
+        <div class="contract a" style="--i:2"><div class="id">عقد A<small>سداد منتظم</small></div><div class="cells"><i class="p" style="--k:0"></i><i class="p" style="--k:1"></i><i class="p" style="--k:2"></i><i class="p" style="--k:3"></i><i class="p" style="--k:4"></i><i class="p" style="--k:5"></i><i class="p" style="--k:6"></i><i class="p" style="--k:7"></i><i class="p" style="--k:8"></i><i class="p" style="--k:9"></i><i class="p" style="--k:10"></i><i class="p" style="--k:11"></i></div><span class="risk lo">خطر منخفض</span></div>
+        <div class="contract a" style="--i:3"><div class="id">عقد B<small>تأخرات متقطعة</small></div><div class="cells"><i class="p" style="--k:0"></i><i class="p" style="--k:1"></i><i class="p" style="--k:2"></i><i class="l" style="--k:3"></i><i class="p" style="--k:4"></i><i class="p" style="--k:5"></i><i class="l" style="--k:6"></i><i class="p" style="--k:7"></i><i class="l" style="--k:8"></i><i class="l" style="--k:9"></i><i class="p" style="--k:10"></i><i class="l" style="--k:11"></i></div><span class="risk md">يستحق المتابعة</span></div>
+        <div class="contract a" style="--i:4"><div class="id">عقد C<small>تأخر يتصاعد</small></div><div class="cells"><i class="p" style="--k:0"></i><i class="p" style="--k:1"></i><i class="p" style="--k:2"></i><i class="p" style="--k:3"></i><i class="p" style="--k:4"></i><i class="l" style="--k:5"></i><i class="l" style="--k:6"></i><i class="l" style="--k:7"></i><i class="m" style="--k:8"></i><i class="m" style="--k:9"></i><i class="m" style="--k:10"></i><i class="m" style="--k:11"></i></div><span class="risk hi">إنذار مبكر</span></div>
+        <div class="row a" style="--i:5;gap:8px;flex-wrap:wrap"><span class="chip ok">مدفوع</span><span class="chip warn">متأخر</span><span class="chip risk" style="color:#ffb4a3;background:rgba(255,122,92,.18)">فائت</span><span class="small">رسم توضيحي لأنماط الدفعات</span></div>
+        <div class="msg a" style="--i:6;font-size:16px">النموذج لا يمنع التعثر، بل يحدد مؤشرات مبكرة تساعد البنك على اتخاذ إجراءات مناسبة.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 16 · الموثوقية ============ -->
+<section class="slide navy" id="s16" data-note="الأرقام من نتائج التحقق المتقاطع على بيانات Home Credit، وليست ضماناً لأداء محفظة بنك سعودي. المحور يبدأ من 0.50 وهو التخمين العشوائي. النموذج الرابع أقل لأن التنبؤ بالتعثر المستقبلي من سلوك الدفع أصعب، ونستخدمه كإشارة إنذار مبكر لا كقرار.">
+  <div class="frame">
+    <div class="eyebrow a"><b>17</b> موثوقية النماذج</div>
+    <h2 class="h2 a" style="--i:1;max-width:34ch;font-size:38px">كيف نعرف أن النماذج الأربعة تعمل بشكل جيد؟</h2>
+    <div class="cols even" style="align-items:center">
+      <div class="stack" style="gap:12px">
+        <div class="card a" style="--i:2"><b style="font-size:16px">التقييم: <span dir="ltr">5-Fold Stratified Cross-Validation</span></b></div>
+        <div class="defs a" style="--i:3;grid-template-columns:1fr">
+          <div><b>AUC</b>هل يرتب النموذج المتعثرين قبل غيرهم؟ (0.50 = تخمين عشوائي، 1.00 = مثالي)</div>
+          <div><b>PR-AUC</b>كم يلتقط من المتعثرين النادرين، وهم نحو 8% فقط من العملاء؟</div>
+        </div>
+        <div class="card a" style="--i:4"><b style="font-size:16px">لماذا النموذج 4 أقل؟</b>
+          <p class="small" style="margin-top:6px">يتنبأ بتعثر لاحق من سلوك الدفع الشهري، وهي مهمة أصعب. نستخدمه كإشارة إنذار مبكر تنبّه الموظف، لا كقرار.</p></div>
+      </div>
+      <div class="card a" style="--i:2;display:flex;flex-direction:column;gap:12px"><b style="font-size:15px">AUC لكل نموذج في النظام</b>
+          <div class="mrow"><div class="mh"><b>النموذج 1 · مخاطر التعثر</b><code>Ensemble</code></div><div class="rw2"><div class="t"><i style="--w:96.9%"></i></div><span class="v">AUC 0.7907</span></div><small>PR-AUC 0.2864</small></div>
+          <div class="mrow"><div class="mh"><b>النموذج 2 · البديل بلا درجات خارجية</b><code>Ensemble</code></div><div class="rw2"><div class="t"><i style="--w:88.8%"></i></div><span class="v">AUC 0.7664</span></div><small>PR-AUC 0.2525</small></div>
+          <div class="mrow"><div class="mh"><b>النموذج 3 · اقتراح المبلغ</b><code>LightGBM</code></div><div class="rw2"><div class="t"><i style="--w:96.0%"></i></div><span class="v">AUC 0.7881</span></div><small>PR-AUC 0.2817</small></div>
+          <div class="mrow"><div class="mh"><b>النموذج 4 · الإنذار المبكر</b><code>LightGBM</code></div><div class="rw2"><div class="t"><i style="--w:59.4%"></i></div><span class="v">AUC 0.6783</span></div><small>PR-AUC 0.1451</small></div>
+          <div class="axis"><span>0.80</span><span>0.50 · تخمين عشوائي</span></div></div>
+    </div>
+    <p class="small a" style="--i:5">النتائج على بيانات Home Credit بتحقق متقاطع (النماذج 1-3 على 307,511 طلباً، والنموذج 4 على 1,710,088 لقطة دفع)، وليست ضماناً لأداء النظام على محفظة بنك سعودي. المرحلة التالية: إعادة التدريب على بيانات البنك.</p>
+  </div>
+</section>
+
+<!-- ============ 19 · الخاتمة ============ -->
+<section class="slide" id="s19" data-note="أعيدوا رحلة ميزان كاملة ثم الجملة الأخيرة ببطء. ثم انتقلوا للعرض الحي.">
+  <div class="frame" style="justify-content:center;gap:26px">
+    <div class="eyebrow a"><b>18</b> الخاتمة</div>
+    <h2 class="h2 a" style="--i:1;max-width:40ch;font-size:40px">من تقييم الطلب إلى متابعة رحلة التمويل</h2>
+    <div class="chain a" style="--i:2">
+      <div class="nd">تقديم الطلب<small>العميل</small></div><svg class="arrow"><use href="#i-arrow"/></svg>
+      <div class="nd g">تحليل المخاطر<small>ميزان</small></div><svg class="arrow"><use href="#i-arrow"/></svg>
+      <div class="nd g">قرار ذكي<small>توصية + تفسير</small></div><svg class="arrow"><use href="#i-arrow"/></svg>
+      <div class="nd">قرار العميل<small>قبول أو رفض العرض</small></div><svg class="arrow"><use href="#i-arrow"/></svg>
+      <div class="nd g">الإنذار المبكر<small>متابعة السداد</small></div>
+    </div>
+    <div class="a" style="--i:3;text-align:center"><div class="logo" style="font-size:96px;line-height:1.1">مِيزان</div><p class="sub" style="font-size:30px;max-width:none;margin-top:6px"><span class="hl">قرارات ائتمانية أذكى، ورحلة تمويل أكثر وعيًا.</span></p></div>
+        <p class="team a" style="--i:5;text-align:center">نوف · محمد · رزان · نوف</p>
+  </div>
+</section>
+
+<!-- ============ العرض الحي ============ -->
+<section class="slide navy" id="s20" data-note="ننتقل الآن إلى التطبيق الفعلي. نختار طلباً تجريبياً، نعرض احتمال التعثر والمسار وأهم العوامل وفحص القدرة على السداد والمبلغ المقترح، ثم نلغي درجات الائتمان الخارجية لنُري انتقال النظام إلى النموذج 2. جهزوا التطبيق قبل العرض.">
+  <div class="frame" style="justify-content:center;gap:22px">
+    <div class="eyebrow a"><b>19</b> العرض الحي</div>
+    <h2 class="h2 a" style="--i:1;font-size:56px">Live Demo</h2>
+    <div class="cols even" style="align-items:center">
+      <div class="stack a" style="--i:2;gap:10px"><div class="card" style="display:grid;grid-template-columns:44px 1fr;gap:14px;align-items:center;padding:12px 16px"><div class="ico" style="font-weight:700;font-size:20px">1</div><div><b style="font-size:18px;display:block">اختيار طلب عميل</b><small style="font-size:14px;color:var(--navyMuted)">من الطلبات التجريبية أو بإدخال بيانات جديدة</small></div></div><div class="card" style="display:grid;grid-template-columns:44px 1fr;gap:14px;align-items:center;padding:12px 16px"><div class="ico" style="font-weight:700;font-size:20px">2</div><div><b style="font-size:18px;display:block">احتمال التعثر والمسار</b><small style="font-size:14px;color:var(--navyMuted)">Fast · Normal · High Risk</small></div></div><div class="card" style="display:grid;grid-template-columns:44px 1fr;gap:14px;align-items:center;padding:12px 16px"><div class="ico" style="font-weight:700;font-size:20px">3</div><div><b style="font-size:18px;display:block">أهم العوامل وفحص القدرة على السداد</b><small style="font-size:14px;color:var(--navyMuted)">SHAP + سقف الالتزامات + المبلغ المقترح</small></div></div><div class="card" style="display:grid;grid-template-columns:44px 1fr;gap:14px;align-items:center;padding:12px 16px"><div class="ico" style="font-weight:700;font-size:20px">4</div><div><b style="font-size:18px;display:block">إلغاء درجات الائتمان الخارجية</b><small style="font-size:14px;color:var(--navyMuted)">ينتقل النظام تلقائياً إلى النموذج 2</small></div></div></div>
+      <div class="a" style="--i:3;border-radius:14px;border:1px solid var(--navyLine);background:rgba(255,255,255,.05);overflow:hidden">
+        <div style="display:flex;align-items:center;gap:8px;padding:10px 14px;background:rgba(255,255,255,.07);direction:ltr"><i style="width:10px;height:10px;border-radius:50%;background:#ff9b85;display:block"></i><i style="width:10px;height:10px;border-radius:50%;background:#ffd98a;display:block"></i><i style="width:10px;height:10px;border-radius:50%;background:#a1ffcb;display:block"></i><span style="margin-inline-start:10px;font-family:var(--mono);font-size:13px;color:var(--navyMuted)">mizan-client.onrender.com/ar</span></div>
+        <div style="padding:22px 24px;text-align:center"><div style="width:230px;height:230px;margin:0 auto;background:#fff;padding:14px;border-radius:14px;box-sizing:border-box"><svg shape-rendering="crispEdges" style="width:100%;height:100%;display:block" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 29 29" class="segno"><path class="qrline" stroke="#0b1f33" d="M0 0.5h7m2 0h5m3 0h4m1 0h7m-29 1h1m5 0h1m5 0h4m1 0h1m2 0h1m1 0h1m5 0h1m-29 1h1m1 0h3m1 0h1m1 0h1m2 0h2m1 0h1m3 0h3m1 0h1m1 0h3m1 0h1m-29 1h1m1 0h3m1 0h1m1 0h4m3 0h3m1 0h1m2 0h1m1 0h3m1 0h1m-29 1h1m1 0h3m1 0h1m1 0h2m2 0h1m3 0h1m2 0h2m1 0h1m1 0h3m1 0h1m-29 1h1m5 0h1m1 0h1m6 0h4m3 0h1m5 0h1m-29 1h7m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h7m-21 1h1m3 0h1m2 0h1m2 0h3m-21 1h1m1 0h5m2 0h4m2 0h1m1 0h1m1 0h1m2 0h5m-26 1h2m1 0h2m1 0h2m1 0h2m1 0h1m2 0h1m1 0h2m1 0h4m3 0h1m-29 1h2m1 0h2m1 0h1m1 0h3m1 0h5m5 0h3m-23 1h2m1 0h1m3 0h1m2 0h2m2 0h1m3 0h3m1 0h2m1 0h1m-27 1h3m1 0h3m1 0h3m2 0h1m2 0h1m2 0h2m3 0h2m-27 1h1m3 0h1m2 0h3m1 0h2m4 0h8m3 0h1m-29 1h3m1 0h1m1 0h3m2 0h1m3 0h3m4 0h1m2 0h2m-26 1h2m6 0h2m1 0h1m1 0h3m1 0h3m6 0h1m-22 1h1m5 0h1m4 0h1m1 0h1m3 0h1m1 0h2m-27 1h1m1 0h1m4 0h3m1 0h1m1 0h2m1 0h1m1 0h7m1 0h1m1 0h1m-29 1h1m1 0h2m2 0h2m3 0h1m1 0h4m3 0h2m1 0h2m1 0h1m-27 1h1m1 0h1m2 0h1m2 0h1m1 0h4m2 0h1m1 0h1m1 0h1m1 0h1m4 0h1m-28 1h1m5 0h2m4 0h1m1 0h1m2 0h1m2 0h5m1 0h3m-21 1h2m1 0h2m3 0h1m1 0h1m1 0h1m3 0h5m-29 1h7m5 0h1m2 0h2m2 0h2m1 0h1m1 0h3m-27 1h1m5 0h1m1 0h2m1 0h1m2 0h1m4 0h2m3 0h1m-25 1h1m1 0h3m1 0h1m1 0h1m3 0h1m2 0h1m1 0h1m2 0h5m1 0h1m-27 1h1m1 0h3m1 0h1m1 0h3m1 0h3m1 0h1m2 0h1m5 0h4m-29 1h1m1 0h3m1 0h1m1 0h1m2 0h1m2 0h2m1 0h2m1 0h8m-28 1h1m5 0h1m2 0h2m3 0h1m1 0h1m1 0h1m1 0h1m1 0h4m1 0h1m-28 1h7m1 0h1m1 0h1m3 0h1m2 0h3m1 0h1m1 0h1m2 0h1"/></svg></div><p style="margin-top:12px;font-size:18px;font-weight:700">امسح الرمز لتجربة ميزان</p><p class="small" style="direction:ltr;font-family:var(--mono);margin-top:4px">https://mizan-client.onrender.com/ar/</p></div></div>
+    </div>
+  </div>
+</section>
+
+</div>
+
+<div id="notes" role="note"></div>
+<div id="prog"></div>
+<nav class="bar" aria-label="التنقل بين الشرائح">
+  <span class="brand">مِيزان<span>Mizan</span></span>
+  <span class="count" id="count">1 / 19</span>
+  <button type="button" id="notesBtn" aria-label="ملاحظات المتحدث (N)"><svg viewBox="0 0 24 24"><path d="M5 4h14v16H5zM8 9h8M8 13h8M8 17h5"/></svg></button>
+  <button type="button" id="pause" aria-label="إيقاف الحركة" aria-pressed="false"><svg viewBox="0 0 24 24"><path d="M9 6v12M15 6v12"/></svg></button>
+  <button type="button" id="fs" aria-label="ملء الشاشة (F)"><svg viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button>
+  <button type="button" id="prev" aria-label="الشريحة السابقة"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></button>
+  <button type="button" id="next" aria-label="الشريحة التالية"><svg viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg></button>
+</nav>
+
+<script>
+(() => {
+  const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
+  const slides = $$('.slide'); let cur = 0;
+  const fmt = n => Math.round(n).toLocaleString('en-US');
+
+  function fit(){ const s = Math.min(innerWidth/1280, (innerHeight-56)/720); document.documentElement.style.setProperty('--s', s); }
+  function show(n){
+    cur = Math.max(0, Math.min(slides.length-1, n));
+    slides.forEach((s,k)=>s.classList.toggle('on', k===cur));
+    $('#count').textContent = (cur+1)+' / '+slides.length;
+    $('#prog').style.width = ((cur+1)/slides.length*100)+'%';
+    $('#notes').textContent = slides[cur].dataset.note || '';
+    history.replaceState(null,'','#'+(cur+1));
+  }
+  $('#next').onclick = ()=>show(cur+1); $('#prev').onclick = ()=>show(cur-1);
+  addEventListener('keydown', e => {
+    if (e.target.tagName === 'INPUT' && (e.key.startsWith('Arrow'))) return;
+    if (['ArrowLeft','PageDown',' ','Enter'].includes(e.key)) { e.preventDefault(); show(cur+1); }
+    else if (['ArrowRight','PageUp','Backspace'].includes(e.key)) { e.preventDefault(); show(cur-1); }
+    else if (e.key === 'Home') show(0); else if (e.key === 'End') show(slides.length-1);
+    else if (e.key === 'f' || e.key === 'F') $('#fs').click();
+    else if (e.key === 'n' || e.key === 'N') $('#notes').classList.toggle('show');
+  });
+  $('#notesBtn').onclick = () => $('#notes').classList.toggle('show');
+  $('#fs').onclick = () => document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen?.();
+  $('#pause').onclick = e => { const p = document.body.classList.toggle('paused'); e.currentTarget.setAttribute('aria-pressed', p); };
+  let tx = null;
+  addEventListener('touchstart', e => tx = e.touches[0].clientX, {passive:true});
+  addEventListener('touchend', e => { if (tx===null) return; const d = e.changedTouches[0].clientX - tx; if (Math.abs(d) > 60) show(cur + (d < 0 ? 1 : -1)); tx = null; }, {passive:true});
+  addEventListener('resize', fit); fit();
+
+  // ---- slide 9: affordability slider (income 12,000 · obligations 1,800 · 60 months · cap 1/3) ----
+  const INC = 12000, OBL = 1800, MON = 60, CAP = 1/3, MAXAMT = (CAP*INC - OBL) * MON;
+  function slide9(){
+    const amt = +$('#amt').value, inst = amt/MON, ratio = (inst+OBL)/INC;
+    $('#amtV').textContent = fmt(amt); $('#inst').textContent = fmt(inst); $('#ratio').textContent = (ratio*100).toFixed(1)+'%';
+    $('#gfill').style.width = Math.min(ratio/0.5,1)*100 + '%';
+    const v = $('#verdict'), ok = ratio <= CAP + 1e-9;
+    v.className = 'verdict ' + (ok ? 'ok' : 'bad'); v.textContent = ok ? 'ضمن حد الاستقطاع' : 'يتجاوز حد الاستقطاع';
+  }
+  $('#amt').addEventListener('input', slide9);
+  $('#limitMsg').innerHTML = 'أقصى مبلغ يحققه حد الاستقطاع: <b class="num">'+fmt(MAXAMT)+'</b> SAR. المبلغ المقترح 110,000 أقل منه لأنه يراعي حد المخاطر أيضاً.';
+  slide9();
+  // gauge marker is positioned on a 0-50% scale: 33.3% of 50% = 66.6% of the bar
+  document.querySelector('#gauge .mk').style.insetInlineStart = (CAP/0.5*100)+'%';
+
+  // ---- slide 10: officer decision ----
+  const DEC = [
+    {t:'تمت الموافقة على المبلغ المطلوب', d:'يصل العميل إشعار بالموافقة على 150,000 SAR. ميزان سجّل التوصية والأسباب مع قرار الموظف.', c:'info'},
+    {t:'إرسال عرض بديل', d:'يصل العميل عرض بمبلغ 110,000 SAR، ويقرر بنفسه القبول أو الرفض.', c:'ok'},
+    {t:'رفض الطلب', d:'يُرفض الطلب بقرار الموظف بعد مراجعة التحليل. تبقى الأسباب الرئيسية متاحة للتوثيق.', c:'risk'}];
+  function dec(i){ $$('.choice').forEach((b,k)=>b.setAttribute('aria-pressed', k===i));
+    $('#decOut').innerHTML = '<span class="chip '+DEC[i].c+'" style="align-self:flex-start">قرار الموظف</span><b style="font-size:26px">'+DEC[i].t+'</b><p class="lede" style="font-size:18px;max-width:none">'+DEC[i].d+'</p>'; }
+  $$('.choice').forEach(b => b.onclick = () => dec(+b.dataset.c)); dec(1);
+
+  // ---- slide 11: customer phone ----
+  function cust(v){
+    $$('#custSeg button').forEach(b => { const on = +b.dataset.v === v; b.setAttribute('aria-pressed', on); b.style.background = on ? '#fff' : 'transparent'; b.style.color = on ? 'var(--ink)' : 'var(--muted)'; });
+    $('#screen').innerHTML = v === 1
+      ? '<p class="small" style="font-weight:700">مِيزان · البنك</p><h3 style="font-size:21px">لدينا عرض تمويلي بديل</h3><div class="offer"><div class="r main"><span>المبلغ المعروض</span><b class="num">110,000</b></div><div class="r"><span>المدة</span><b>60 شهراً</b></div><div class="r"><span>القسط التقريبي</span><b class="num">1,833</b></div></div><p class="small">بناءً على دخلك والتزاماتك، نقترح مبلغاً أقل من المطلوب.</p><div style="margin-top:auto;display:grid;gap:8px"><span class="btn mint" style="justify-content:center">قبول العرض</span><span class="btn ghost" style="justify-content:center">رفض</span></div>'
+      : '<p class="small" style="font-weight:700">مِيزان · البنك</p><h3 style="font-size:21px">تمت الموافقة على طلبك</h3><div class="offer"><div class="r main"><span>المبلغ</span><b class="num">150,000</b></div><div class="r"><span>المدة</span><b>60 شهراً</b></div></div><p class="small">سنتواصل معك لإكمال الإجراءات.</p><div style="margin-top:auto"><span class="btn mint" style="justify-content:center;width:100%">متابعة</span></div>';
+    $('#custLede').textContent = v === 1 ? 'إذا وصل عرض بديل، يستطيع العميل قبوله أو رفضه.' : 'عند الموافقة يستلم العميل قراره مباشرة مع تفاصيل التمويل.';
+  }
+  $$('#custSeg button').forEach(b => b.onclick = () => cust(+b.dataset.v)); cust(1);
+
+  // ---- slide 14: external scores toggle ----
+  function ext(on){
+    $('#extOn').setAttribute('aria-pressed', on); $('#extOff').setAttribute('aria-pressed', !on);
+    $('#nA').classList.toggle('dim', !on); $('#nB').classList.toggle('dim', on);
+    $('#nA').classList.toggle('mint', on); $('#nB').classList.toggle('mint', !on);
+    $('#aucV').textContent = on ? '0.7907' : '0.7664';
+    $('#aucK').textContent = on ? 'AUC للنموذج الرئيسي' : 'AUC للنموذج البديل (أقل دقة، لكنه يبقي الخدمة متاحة)';
+  }
+  $('#extOn').onclick = () => ext(true); $('#extOff').onclick = () => ext(false);
+
+  const start = parseInt(location.hash.slice(1), 10);
+  show(Number.isFinite(start) ? start-1 : 0);
+})();
+</script>
+</body>
+</html>
